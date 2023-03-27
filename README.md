@@ -1,0 +1,2 @@
+# stringmath
+Library for calculators
