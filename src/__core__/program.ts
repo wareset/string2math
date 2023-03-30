@@ -36,8 +36,9 @@ export class CProgram {
   //   return '' + this.is
   // }
 
-  calc(slib?: MathLib, alib?: MathLib): number {
-    return this.is ? this.is.calc(slib, alib) : NaN
+  calc(...funcs: MathLib[]): number
+  calc(): number {
+    return this.is ? this.is.calc(arguments) : NaN
   }
 }
 
@@ -56,8 +57,9 @@ export class CParenthesis {
   //   return '(' + ('' + this.is).trim() + ')'
   // }
 
-  calc(slib?: MathLib, alib?: MathLib): number {
-    return this.is ? this.is.calc(slib, alib) : NaN
+  calc(...funcs: MathLib[]): number
+  calc(): number {
+    return this.is ? this.is.calc(arguments) : NaN
   }
 }
 
@@ -87,14 +89,16 @@ export class CConditional {
   //   return `${is} ? ${isTrue} : ${isFalse}`
   // }
 
-  calc(slib?: MathLib, alib?: MathLib): number {
+  calc(...funcs: MathLib[]): number
+  calc(): number {
     const isBlock = this.is
     const isTrueBlock = this.isTrue
     const isFalseBlock = this.isFalse
 
-    return isBlock ? isBlock.calc(slib, alib) : NaN
-      ? isTrueBlock ? isTrueBlock.calc(slib, alib) : NaN
-      : isFalseBlock ? isFalseBlock.calc(slib, alib) : NaN
+    const a = arguments
+    return isBlock ? isBlock.calc(a) : NaN
+      ? isTrueBlock ? isTrueBlock.calc(a) : NaN
+      : isFalseBlock ? isFalseBlock.calc(a) : NaN
   }
 }
 
@@ -113,21 +117,30 @@ export class CConstant {
   //   return this.is
   // }
 
-  calc(slib?: MathLib, alib?: MathLib): number {
+  calc(...funcs: MathLib[]): number
+  calc(): number {
     const is = this.is
-    return +(
-      alib && is in alib && typeof alib[is] !== 'function' ? alib[is]
-        : slib && is in slib && typeof slib[is] !== 'function' ? slib[is]
-          : is
-    )
+    
+    const a = arguments
+    for (let i = a.length; i-- > 0;) {
+      if (is in a[i] && typeof a[i] !== 'function') {
+        return +a[i][is]
+      }
+    }
+    return +is
+    // return +(
+    //   alib && is in alib && typeof alib[is] !== 'function' ? alib[is]
+    //     : slib && is in slib && typeof slib[is] !== 'function' ? slib[is]
+    //       : is
+    // )
   }
 }
 
 //
 // CFunction
 //
-function map_calc(this: [MathLib?, MathLib?], v: INode): number {
-  return v.calc(this[0], this[1])
+function map_calc(this: MathLib[], v: INode): number {
+  return v.calc.apply(void 0, this)
 }
 export class CFunction {
   type: 'Function'
@@ -143,13 +156,17 @@ export class CFunction {
   //   return `${this.is}(${this.isArgs.join(', ')})`
   // }
 
-  calc(slib?: MathLib, alib?: MathLib): number {
+  calc(...funcs: MathLib[]): number
+  calc(): number {
     const is = this.is
-    const fn =
-      alib && is in alib && typeof alib[is] === 'function' ? alib[is]
-        : slib && is in slib && typeof slib[is] === 'function' ? slib[is]
-          : NaN
-    return fn && +fn.apply(void 0, this.isArgs.map(map_calc, [slib, alib]))
+
+    const a = arguments
+    for (let i = a.length; i-- > 0;) {
+      if (is in a[i] && typeof a[i][is] === 'function') {
+        return +a[i][is].apply(void 0, this.isArgs.map(map_calc, a))
+      }
+    }
+    return NaN
   }
 }
 
@@ -160,7 +177,7 @@ import {
   mul, div,
   rem,
   add, // sub,
-  // lt, lte, gt, gte, eq
+  exp
 } from './algebra'
 export class COperator {
   type: 'Operator'
@@ -186,13 +203,16 @@ export class COperator {
   //   return isLeft + leftSpace + this.is + rightSpace + isRight
   // }
 
+  calc(...funcs: MathLib[]): number
   // eslint-disable-next-line consistent-return
-  calc(slib?: MathLib, alib?: MathLib): number {
+  calc(): number {
     const is = this.is
     const isLeftBlock = this.isLeft
     const isRightBlock = this.isRight
-    const isLeft = isLeftBlock ? isLeftBlock.calc(slib, alib) : NaN
-    const isRight = isRightBlock ? isRightBlock.calc(slib, alib) : NaN
+
+    const a = arguments
+    const isLeft = isLeftBlock ? isLeftBlock.calc(a) : NaN
+    const isRight = isRightBlock ? isRightBlock.calc(a) : NaN
 
     if (!isRightBlock) {
       if (isLeftBlock) {
@@ -211,11 +231,17 @@ export class COperator {
       return isRight
     }
 
+    for (let i = a.length; i-- > 0;) {
+      if (is in a[i] && typeof a[i][is] === 'function') {
+        return +a[i][is](isLeft, isRight)
+      }
+    }
+
     // eslint-disable-next-line default-case
     switch (is) {
-      // case '!': return
-      // case '~': return
-      case '**': return Math.pow(isLeft, isRight)
+      // case '!': return NaN
+      // case '~': return NaN
+      case '**': return exp(isLeft, isRight)
       case '*': return mul(isLeft, isRight)
       case '/': return div(isLeft, isRight)
       case '%': return rem(isLeft, isRight)

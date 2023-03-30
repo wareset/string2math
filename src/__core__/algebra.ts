@@ -32,8 +32,26 @@ export function raw2num(raw: Raw): number {
   return raw.nan ? NaN
     : raw.inf ? raw.neg ? -Infinity : Infinity
       : raw.neg
-        ? 0 - +((raw.int || '0') + 'e' + raw.exp)
+        ? -((raw.int || '0') + 'e' + raw.exp)
         : +((raw.int || '0') + 'e' + raw.exp)
+}
+
+//
+// Exponentiation (**) … ** …
+//
+export function exp(l: number, r: number): number {
+  if (r === 0) return 1
+  if (r !== r || l !== l) return NaN
+  if (r === Infinity) return r
+  if (l === 0 || r === -Infinity) return 0
+  if (l === Infinity || l === -Infinity) return l
+
+  if (r < 0) l = div(1, l), r = -r
+  let res = 1, i = 0
+  for (;++i <= r;) res = mul(res, l)
+  // if ((r = add(r, 1 - i)) > 0) res = mul(res, raw2num(num2raw(Math.pow(l, r))))
+  if ((r = add(r, 1 - i)) > 0) res = mul(res, Math.pow(l, r))
+  return res
 }
 
 //

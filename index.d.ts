@@ -10,6 +10,7 @@ export { create } from "./types";
 import { default as __default__ } from "./types";
 export { __default__ as default };
 export { div } from "./types";
+export { exp } from "./types";
 export { mul } from "./types";
 export { num2raw } from "./types";
 export { raw2num } from "./types";
