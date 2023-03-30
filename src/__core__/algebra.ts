@@ -31,7 +31,9 @@ export function num2raw(s: number): Raw {
 export function raw2num(raw: Raw): number {
   return raw.nan ? NaN
     : raw.inf ? raw.neg ? -Infinity : Infinity
-      : raw.neg ? 0 - +(raw.int + 'e' + raw.exp) : +(raw.int + 'e' + raw.exp)
+      : raw.neg
+        ? 0 - +((raw.int || '0') + 'e' + raw.exp)
+        : +((raw.int || '0') + 'e' + raw.exp)
 }
 
 //
