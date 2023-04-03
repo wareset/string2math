@@ -1,20 +1,20 @@
-declare type INode = COperator | CParenthesis | CFunction | CConstant | CConditional;
+declare type INode = OperatorNode | ParenthesisNode | FunctionNode | ConstantNode | ConditionalNode;
 declare type MathLib = {
     [key: string]: any;
 };
-export declare class CProgram {
+export declare class ProgramNode {
     type: 'Program';
     is: INode | undefined;
     constructor(data: INode | undefined);
     calc(...funcs: MathLib[]): number;
 }
-export declare class CParenthesis {
+export declare class ParenthesisNode {
     type: 'Parenthesis';
     is: INode | undefined;
     constructor(data: INode | undefined);
     calc(...funcs: MathLib[]): number;
 }
-export declare class CConditional {
+export declare class ConditionalNode {
     type: 'Conditional';
     is: INode | undefined;
     isTrue: INode | undefined;
@@ -22,20 +22,20 @@ export declare class CConditional {
     constructor(falseExp: INode | undefined, trueExp: INode | undefined, condition: INode | undefined);
     calc(...funcs: MathLib[]): number;
 }
-export declare class CConstant {
+export declare class ConstantNode {
     type: 'Constant';
     is: string;
     constructor(a: string);
     calc(...funcs: MathLib[]): number;
 }
-export declare class CFunction {
+export declare class FunctionNode {
     type: 'Function';
     is: string;
     isArgs: INode[];
     constructor(a: string, args: INode[]);
     calc(...funcs: MathLib[]): number;
 }
-export declare class COperator {
+export declare class OperatorNode {
     type: 'Operator';
     is: string;
     isLeft: INode | undefined;
@@ -43,5 +43,5 @@ export declare class COperator {
     constructor(operator: string, right: INode | undefined, left: INode | undefined);
     calc(...funcs: MathLib[]): number;
 }
-export declare function createProgram(source: string): CProgram;
+export declare function createProgram(source: string): ProgramNode;
 export {};

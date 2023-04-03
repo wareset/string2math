@@ -13,14 +13,14 @@ const REG =
 // Conditional
 // Ternary
 
-type INode = COperator | CParenthesis | CFunction | CConstant | CConditional
+type INode = OperatorNode | ParenthesisNode | FunctionNode | ConstantNode | ConditionalNode
 
 type MathLib = { [key: string]: any }
 
 //
-// CProgram
+// ProgramNode
 //
-export class CProgram {
+export class ProgramNode {
   type: 'Program'
   is: INode | undefined
   constructor(data: INode | undefined) {
@@ -43,9 +43,9 @@ export class CProgram {
 }
 
 //
-// CParenthesis
+// ParenthesisNode
 //
-export class CParenthesis {
+export class ParenthesisNode {
   type: 'Parenthesis'
   is: INode | undefined
   constructor(data: INode | undefined) {
@@ -64,9 +64,9 @@ export class CParenthesis {
 }
 
 //
-// CConditional
+// ConditionalNode
 //
-export class CConditional {
+export class ConditionalNode {
   type: 'Conditional'
   is: INode | undefined
   isTrue: INode | undefined
@@ -103,9 +103,9 @@ export class CConditional {
 }
 
 //
-// CConstant
+// ConstantNode
 //
-export class CConstant {
+export class ConstantNode {
   type: 'Constant'
   is: string
   constructor(a: string) {
@@ -137,12 +137,12 @@ export class CConstant {
 }
 
 //
-// CFunction
+// FunctionNode
 //
 function map_calc(this: MathLib[], v: INode): number {
   return v.calc.apply(void 0, this)
 }
-export class CFunction {
+export class FunctionNode {
   type: 'Function'
   is: string
   isArgs: INode[]
@@ -171,7 +171,7 @@ export class CFunction {
 }
 
 //
-// COperator
+// OperatorNode
 //
 import {
   mul, div,
@@ -179,7 +179,7 @@ import {
   add, // sub,
   exp
 } from './algebra'
-export class COperator {
+export class OperatorNode {
   type: 'Operator'
   is: string
   isLeft: INode | undefined
@@ -345,7 +345,7 @@ function parse(
       f = a[i].f - offset, s = a[i].s - offset
       if (f > -1 && f < A.length && s > f) {
         a.splice(i, 1)
-        return new CConditional(
+        return new ConditionalNode(
           last(concat(
             parse(A.slice(s + 1), deep, offset + s + 1, parenthsis, conditions, commas, operators)
           )),
@@ -375,7 +375,7 @@ function parse(
           continue
         }
         a.splice(i, 1)
-        return new COperator(
+        return new OperatorNode(
           A[f],
           last(concat(
             parse(A.slice(f + 1), deep, offset + f + 1, parenthsis, conditions, commas, operators)
@@ -394,12 +394,12 @@ function parse(
       if (f > -1 && f < A.length && s > f) {
         a.splice(i, 1)
         return A[f] === '('
-          ? new CParenthesis(
+          ? new ParenthesisNode(
             last(concat(
               parse(A.slice(f + 1, s), deep + 1, offset + f + 1, parenthsis, conditions, commas, operators)
             ))
           )
-          : new CFunction(
+          : new FunctionNode(
             A[f],
             concat(
               parse(A.slice(f + 2, s), deep + 1, offset + f + 2, parenthsis, conditions, commas, operators)
@@ -410,7 +410,7 @@ function parse(
   }
 
   const val = A.join('')
-  return val ? new CConstant(val) : []
+  return val ? new ConstantNode(val) : []
 }
 
 function setOperator(
@@ -429,7 +429,7 @@ function setMultiply(
 }
 
 // 
-export function createProgram(source: string): CProgram {
+export function createProgram(source: string): ProgramNode {
   source = '(' + source + ')'
   REG.lastIndex = 0
   const A: string[] = []
@@ -535,7 +535,7 @@ export function createProgram(source: string): CProgram {
     }
   }
 
-  return new CProgram(
+  return new ProgramNode(
     last(concat(
       parse(A.slice(1, -1), 1, 1, parenthsis, conditions, commas, operators)
     ))

@@ -1,10 +1,10 @@
 export * from "./types";
-export { NodeConditional } from "./types";
-export { NodeConstant } from "./types";
-export { NodeFunction } from "./types";
-export { NodeOperator } from "./types";
-export { NodeParenthesis } from "./types";
-export { NodeProgram } from "./types";
+export { ConditionalNode } from "./types";
+export { ConstantNode } from "./types";
+export { FunctionNode } from "./types";
+export { OperatorNode } from "./types";
+export { ParenthesisNode } from "./types";
+export { ProgramNode } from "./types";
 export { add } from "./types";
 export { create } from "./types";
 import { default as __default__ } from "./types";

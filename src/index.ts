@@ -8,10 +8,10 @@ export { num2raw, raw2num } from './__core__/algebra'
 export { add, sub, mul, div, rem, exp } from './__core__/algebra'
 
 export {
-  CProgram as NodeProgram,
-  CParenthesis as NodeParenthesis,
-  CConditional as NodeConditional,
-  CConstant as NodeConstant,
-  CFunction as NodeFunction,
-  COperator as NodeOperator
+  ProgramNode,
+  ParenthesisNode,
+  ConditionalNode,
+  ConstantNode,
+  FunctionNode,
+  OperatorNode
 } from './__core__/program'

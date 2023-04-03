@@ -1,7 +1,10 @@
 // https://insidethediv.com/javascript-simple-projects-with-source-code-frc-calculator
 
+// const REG =
+//   /^(?<neg>-?)(?<nan>(?:NaN)?)(?<inf>(?:Infinity)?)(?<int>\d*)[.,]?(?<frc>\d*)e?(?<exp>[-+]?\d*)n?$/i
+
 const REG =
-  /^(?<neg>-?)(?<nan>(?:NaN)?)(?<inf>(?:Infinity)?)(?<int>\d*)[.,]?(?<frc>\d*)e?(?<exp>[-+]?\d*)n?$/i
+  /^([-]?)((?:NaN)?)((?:Infinity)?)(\d*)[.,]?(\d*)e?([-+]?\d*)n?$/i
 
 const REG_ZERO = /^0+/
 
@@ -14,18 +17,24 @@ export type Raw = {
 }
 
 export function num2raw(s: number): Raw {
-  const res = (+s + '').match(REG)!.groups as any
+  const res = (+s + '').match(REG)!//.groups as any
 
-  const int = res.int
-  const frc = res.frc
+  // const int = res.int
+  // const frc = res.frc
 
-  res.nan = !!res.nan
-  res.neg = res.neg === '-'
-  res.inf = !!res.inf
-  res.int = (int + frc).replace(REG_ZERO, '')
-  res.exp = +res.exp - frc.length
-  delete res.frc
-  return res
+  // res.nan = !!res.nan
+  // res.neg = res.neg === '-'
+  // res.inf = !!res.inf
+  // res.int = (int + frc).replace(REG_ZERO, '')
+  // res.exp = +res.exp - frc.length
+  // delete res.frc
+  return {
+    neg: res[1] === '-',
+    nan: !!res[2],
+    inf: !!res[3],
+    int: (res[4] + res[5]).replace(REG_ZERO, ''),
+    exp: +res[6] - res[5].length,
+  }
 }
 
 export function raw2num(raw: Raw): number {
