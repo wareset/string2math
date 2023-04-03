@@ -3,52 +3,41 @@
 // const REG =
 //   /^(?<neg>-?)(?<nan>(?:NaN)?)(?<inf>(?:Infinity)?)(?<int>\d*)[.,]?(?<frc>\d*)e?(?<exp>[-+]?\d*)n?$/i
 
-const REG =
-  /^([-]?)((?:NaN)?)((?:Infinity)?)(\d*)[.,]?(\d*)e?([-+]?\d*)n?$/i
+const REG = /^(NaN)?([-]?)(Infinity)?(\d*)\.?(\d*)[eE]?([-+]?\d*)$/
 
 const REG_ZERO = /^0+/
 
 export type Raw = {
-  nan: boolean
-  neg: boolean
-  inf: boolean
-  int: string
-  exp: number
+  isNaN: boolean
+  isMinus: boolean
+  isInfinity: boolean
+  integer: string
+  exponent: number
 }
 
 export function num2raw(s: number): Raw {
-  const res = (+s + '').match(REG)!//.groups as any
+  const res = (+s + '').match(REG)!
 
-  // const int = res.int
-  // const frc = res.frc
-
-  // res.nan = !!res.nan
-  // res.neg = res.neg === '-'
-  // res.inf = !!res.inf
-  // res.int = (int + frc).replace(REG_ZERO, '')
-  // res.exp = +res.exp - frc.length
-  // delete res.frc
   return {
-    neg: res[1] === '-',
-    nan: !!res[2],
-    inf: !!res[3],
-    int: (res[4] + res[5]).replace(REG_ZERO, ''),
-    exp: +res[6] - res[5].length,
+    isNaN     : !!res[1],
+    isMinus   : res[2] === '-',
+    isInfinity: !!res[3],
+    integer   : (res[4] + res[5]).replace(REG_ZERO, ''),
+    exponent  : +res[6] - res[5].length,
   }
 }
 
 export function raw2num(raw: Raw): number {
-  return raw.nan ? NaN
-    : raw.inf ? raw.neg ? -Infinity : Infinity
-      : raw.neg
-        ? -((raw.int || '0') + 'e' + raw.exp)
-        : +((raw.int || '0') + 'e' + raw.exp)
+  return raw.isNaN ? NaN
+    : raw.isInfinity ? raw.isMinus ? -Infinity : Infinity
+      : +((raw.isMinus ? '-' : '') + (raw.integer || '0') + 'e' + raw.exponent)
 }
 
 //
 // Exponentiation (**) … ** …
 //
 export function exp(l: number, r: number): number {
+  l = +l, r = +r
   if (r === 0) return 1
   if (r !== r || l !== l) return NaN
   if (r === Infinity) return r
@@ -69,17 +58,17 @@ export function exp(l: number, r: number): number {
 export function mul(_l: number, _r: number): number {
   const l = num2raw(_l), r = num2raw(_r)
   // console.log('mul', _l * _r, { ...l }, { ...r })
-  // const a = l.exp + r.exp
-  // l.exp = r.exp = 0
+  // const a = l.exponent + r.exponent
+  // l.exponent = r.exp = 0
   // const c = num2raw(raw2num(l) * raw2num(r))
-  // c.exp += a
+  // c.exponent += a
   // return raw2num(c)
 
-  const le = l.exp, re = r.exp
+  const le = l.exponent, re = r.exponent
   const a = (le > re ? re - le : le - re) || le
-  l.exp -= a, r.exp -= a
+  l.exponent -= a, r.exponent -= a
   const c = num2raw(raw2num(l) * raw2num(r))
-  c.exp += a + a
+  c.exponent += a + a
   return raw2num(c)
 }
 
@@ -89,9 +78,9 @@ export function mul(_l: number, _r: number): number {
 export function div(_l: number, _r: number): number {
   const l = num2raw(_l), r = num2raw(_r)
   // console.log('div', _l / _r, { ...l }, { ...r })
-  const le = l.exp, re = r.exp
+  const le = l.exponent, re = r.exponent
   const a = (le > re ? re - le : le - re) || le
-  l.exp -= a, r.exp -= a
+  l.exponent -= a, r.exponent -= a
   return raw2num(l) / raw2num(r)
 }
 
@@ -101,11 +90,11 @@ export function div(_l: number, _r: number): number {
 export function rem(_l: number, _r: number): number {
   const l = num2raw(_l), r = num2raw(_r)
   // console.log('rem', _l % _r, { ...l }, { ...r })
-  const le = l.exp, re = r.exp
+  const le = l.exponent, re = r.exponent
   const a = (le > re ? re - le : le - re) || le
-  l.exp -= a, r.exp -= a
+  l.exponent -= a, r.exponent -= a
   const c = num2raw(raw2num(l) % raw2num(r))
-  c.exp += a
+  c.exponent += a
   return raw2num(c)
 }
 
@@ -115,11 +104,11 @@ export function rem(_l: number, _r: number): number {
 export function add(_l: number, _r: number): number {
   const l = num2raw(_l), r = num2raw(_r)
   // console.log('add', _l + _r, { ...l }, { ...r })
-  const le = l.exp, re = r.exp
+  const le = l.exponent, re = r.exponent
   const a = (le > re ? re - le : le - re) || le
-  l.exp -= a, r.exp -= a
+  l.exponent -= a, r.exponent -= a
   const c = num2raw(raw2num(l) + raw2num(r))
-  c.exp += a
+  c.exponent += a
   return raw2num(c)
 }
 

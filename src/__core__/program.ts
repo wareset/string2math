@@ -28,17 +28,17 @@ export class ProgramNode {
     this.is = data
   }
 
-  // get string(): string {
-  //   return this.toString()
-  // }
+  toArray(): string[] {
+    return this.is ? this.is.toArray() : ['NaN']
+  }
 
-  // toString(): string {
-  //   return '' + this.is
-  // }
+  toString(): string {
+    return '' + (this.is || NaN)
+  }
 
-  calc(...funcs: MathLib[]): number
-  calc(): number {
-    return this.is ? this.is.calc(arguments) : NaN
+  calculate(...funcs: MathLib[]): number
+  calculate(): number {
+    return this.is ? this.is.calculate(arguments) : NaN
   }
 }
 
@@ -53,13 +53,17 @@ export class ParenthesisNode {
     this.is = data
   }
 
-  // toString(): string {
-  //   return '(' + ('' + this.is).trim() + ')'
-  // }
+  toArray(): string[] {
+    return concat('(', this.is ? this.is.toArray() : 'NaN', ')')
+  }
 
-  calc(...funcs: MathLib[]): number
-  calc(): number {
-    return this.is ? this.is.calc(arguments) : NaN
+  toString(): string {
+    return '(' + (this.is || NaN) + ')'
+  }
+
+  calculate(...funcs: MathLib[]): number
+  calculate(): number {
+    return this.is ? this.is.calculate(arguments) : NaN
   }
 }
 
@@ -82,23 +86,30 @@ export class ConditionalNode {
     this.isFalse = falseExp
   }
 
-  // toString(): string {
-  //   const is = ('' + this.is).trim()
-  //   const isTrue = ('' + this.isTrue).trim()
-  //   const isFalse = ('' + this.isFalse).trim()
-  //   return `${is} ? ${isTrue} : ${isFalse}`
-  // }
+  toArray(): string[] {
+    return concat(
+      this.is ? this.is.toArray() : 'NaN',
+      '?',
+      this.isTrue ? this.isTrue.toArray() : 'NaN',
+      ':',
+      this.isFalse ? this.isFalse.toArray() : 'NaN',
+    )
+  }
 
-  calc(...funcs: MathLib[]): number
-  calc(): number {
+  toString(): string {
+    return `${this.is || NaN} ? ${this.isTrue || NaN} : ${this.isFalse || NaN}`
+  }
+
+  calculate(...funcs: MathLib[]): number
+  calculate(): number {
     const isBlock = this.is
     const isTrueBlock = this.isTrue
     const isFalseBlock = this.isFalse
 
     const a = arguments
-    return isBlock ? isBlock.calc(a) : NaN
-      ? isTrueBlock ? isTrueBlock.calc(a) : NaN
-      : isFalseBlock ? isFalseBlock.calc(a) : NaN
+    return isBlock ? isBlock.calculate(a) : NaN
+      ? isTrueBlock ? isTrueBlock.calculate(a) : NaN
+      : isFalseBlock ? isFalseBlock.calculate(a) : NaN
   }
 }
 
@@ -113,12 +124,16 @@ export class ConstantNode {
     this.is = a
   }
 
-  // toString(): string {
-  //   return this.is
-  // }
+  toArray(): string[] {
+    return [this.is]
+  }
 
-  calc(...funcs: MathLib[]): number
-  calc(): number {
+  toString(): string {
+    return this.is
+  }
+
+  calculate(...funcs: MathLib[]): number
+  calculate(): number {
     const is = this.is
     
     const a = arguments
@@ -139,8 +154,11 @@ export class ConstantNode {
 //
 // FunctionNode
 //
-function map_calc(this: MathLib[], v: INode): number {
-  return v.calc.apply(void 0, this)
+function map_toArr(v: INode): string[] {
+  return v.toArray()
+}
+function map_calculate(this: MathLib[], v: INode): number {
+  return v.calculate.apply(void 0, this)
 }
 export class FunctionNode {
   type: 'Function'
@@ -152,18 +170,22 @@ export class FunctionNode {
     this.isArgs = args
   }
 
-  // toString(): string {
-  //   return `${this.is}(${this.isArgs.join(', ')})`
-  // }
+  toArray(): string[] {
+    return concat(this.is + '(', concat.apply(void 0, this.isArgs.map(map_toArr)), ')') as any
+  }
 
-  calc(...funcs: MathLib[]): number
-  calc(): number {
+  toString(): string {
+    return `${this.is}(${this.isArgs.join(', ')})`
+  }
+
+  calculate(...funcs: MathLib[]): number
+  calculate(): number {
     const is = this.is
 
     const a = arguments
     for (let i = a.length; i-- > 0;) {
       if (is in a[i] && typeof a[i][is] === 'function') {
-        return +a[i][is].apply(void 0, this.isArgs.map(map_calc, a))
+        return +a[i][is].apply(void 0, this.isArgs.map(map_calculate, a))
       }
     }
     return NaN
@@ -195,24 +217,58 @@ export class OperatorNode {
     this.isRight = right
   }
 
-  // toString(): string {
-  //   const isLeft = ((this.isLeft || '') + '').trim()
-  //   const isRight = ((this.isRight || '') + '').trim()
-  //   const leftSpace = isRight ? ' ' : ''
-  //   const rightSpace = isLeft ? ' ' : ''
-  //   return isLeft + leftSpace + this.is + rightSpace + isRight
-  // }
+  toArray(): string[] {
+    const is = this.is
+    const isLeftBlock = this.isLeft
+    const isRightBlock = this.isRight
 
-  calc(...funcs: MathLib[]): number
+    const isLeft = isLeftBlock ? isLeftBlock.toArray() : ['NaN']
+    const isRight = isRightBlock ? isRightBlock.toArray() : ['NaN']
+
+    return (
+      !isRightBlock
+        ? isLeftBlock && is === '%'
+          ? concat(isLeft, is)
+          : isLeft
+        : !isLeftBlock
+          ? isRightBlock && (is === '-' || is === '!' || is === '~')
+            ? concat(is, isRight)
+            : isRight
+          : is === '!' || is === '~' ? ['NaN'] : concat(isLeft, is, isRight)
+    )
+  }
+
+  toString(): string {
+    const is = this.is
+    const isLeftBlock = this.isLeft
+    const isRightBlock = this.isRight
+    
+    const isLeft = '' + (isLeftBlock || NaN)
+    const isRight = '' + (isRightBlock || NaN)
+
+    return (
+      !isRightBlock
+        ? isLeftBlock && is === '%'
+          ? isLeft + is
+          : isLeft
+        : !isLeftBlock
+          ? isRightBlock && (is === '-' || is === '!' || is === '~')
+            ? is + isRight
+            : isRight
+          : is === '!' || is === '~' ? 'NaN' : isLeft + ' ' + is + ' ' + isRight
+    )
+  }
+
+  calculate(...funcs: MathLib[]): number
   // eslint-disable-next-line consistent-return
-  calc(): number {
+  calculate(): number {
     const is = this.is
     const isLeftBlock = this.isLeft
     const isRightBlock = this.isRight
 
     const a = arguments
-    const isLeft = isLeftBlock ? isLeftBlock.calc(a) : NaN
-    const isRight = isRightBlock ? isRightBlock.calc(a) : NaN
+    const isLeft = isLeftBlock ? isLeftBlock.calculate(a) : NaN
+    const isRight = isRightBlock ? isRightBlock.calculate(a) : NaN
 
     if (!isRightBlock) {
       if (isLeftBlock) {
@@ -367,10 +423,10 @@ function parse(
         // TODO: нужно оптимизировать эту херню
         // она нужна для унарных символов и для работы процентов там где нужно
         if (i > 0 && (
-          // --4
-          OPERATORS[A[f - 1]] && A[f - 1] !== '%' ||
+          // 3% % ---2
+          OPERATORS[A[f - 1]] && A[f - 1] !== '%' //  || A[f - 2] === '%' ||
           // 4%
-          A[f] === '%' && (!A[f + 1] || OPERATORS[A[f + 1]])
+          // A[f] === '%' && (!A[f + 1] || OPERATORS[A[f + 1]] < OPERATORS['~'])
         )) {
           continue
         }

@@ -1,9 +1,9 @@
 export declare type Raw = {
-    nan: boolean;
-    neg: boolean;
-    inf: boolean;
-    int: string;
-    exp: number;
+    isNaN: boolean;
+    isMinus: boolean;
+    isInfinity: boolean;
+    integer: string;
+    exponent: number;
 };
 export declare function num2raw(s: number): Raw;
 export declare function raw2num(raw: Raw): number;

@@ -6,13 +6,17 @@ export declare class ProgramNode {
     type: 'Program';
     is: INode | undefined;
     constructor(data: INode | undefined);
-    calc(...funcs: MathLib[]): number;
+    toArray(): string[];
+    toString(): string;
+    calculate(...funcs: MathLib[]): number;
 }
 export declare class ParenthesisNode {
     type: 'Parenthesis';
     is: INode | undefined;
     constructor(data: INode | undefined);
-    calc(...funcs: MathLib[]): number;
+    toArray(): string[];
+    toString(): string;
+    calculate(...funcs: MathLib[]): number;
 }
 export declare class ConditionalNode {
     type: 'Conditional';
@@ -20,20 +24,26 @@ export declare class ConditionalNode {
     isTrue: INode | undefined;
     isFalse: INode | undefined;
     constructor(falseExp: INode | undefined, trueExp: INode | undefined, condition: INode | undefined);
-    calc(...funcs: MathLib[]): number;
+    toArray(): string[];
+    toString(): string;
+    calculate(...funcs: MathLib[]): number;
 }
 export declare class ConstantNode {
     type: 'Constant';
     is: string;
     constructor(a: string);
-    calc(...funcs: MathLib[]): number;
+    toArray(): string[];
+    toString(): string;
+    calculate(...funcs: MathLib[]): number;
 }
 export declare class FunctionNode {
     type: 'Function';
     is: string;
     isArgs: INode[];
     constructor(a: string, args: INode[]);
-    calc(...funcs: MathLib[]): number;
+    toArray(): string[];
+    toString(): string;
+    calculate(...funcs: MathLib[]): number;
 }
 export declare class OperatorNode {
     type: 'Operator';
@@ -41,7 +51,9 @@ export declare class OperatorNode {
     isLeft: INode | undefined;
     isRight: INode | undefined;
     constructor(operator: string, right: INode | undefined, left: INode | undefined);
-    calc(...funcs: MathLib[]): number;
+    toArray(): string[];
+    toString(): string;
+    calculate(...funcs: MathLib[]): number;
 }
 export declare function createProgram(source: string): ProgramNode;
 export {};
