@@ -17,6 +17,8 @@ type INode = OperatorNode | ParenthesisNode | FunctionNode | ConstantNode | Cond
 
 type MathLib = { [key: string]: any }
 
+type ArrayFlat = string[] // | (string | ArrayFlat)[]
+
 //
 // ProgramNode
 //
@@ -28,7 +30,7 @@ export class ProgramNode {
     this.is = data
   }
 
-  toArray(): string[] {
+  toArray(): ArrayFlat {
     return this.is ? this.is.toArray() : ['NaN']
   }
 
@@ -53,7 +55,7 @@ export class ParenthesisNode {
     this.is = data
   }
 
-  toArray(): string[] {
+  toArray(): ArrayFlat {
     return concat('(', this.is ? this.is.toArray() : 'NaN', ')')
   }
 
@@ -86,7 +88,7 @@ export class ConditionalNode {
     this.isFalse = falseExp
   }
 
-  toArray(): string[] {
+  toArray(): ArrayFlat {
     return concat(
       this.is ? this.is.toArray() : 'NaN',
       '?',
@@ -97,7 +99,7 @@ export class ConditionalNode {
   }
 
   toString(): string {
-    return `${this.is || NaN} ? ${this.isTrue || NaN} : ${this.isFalse || NaN}`
+    return `(${this.is || NaN} ? ${this.isTrue || NaN} : ${this.isFalse || NaN})`
   }
 
   calculate(...funcs: MathLib[]): number
@@ -124,7 +126,7 @@ export class ConstantNode {
     this.is = a
   }
 
-  toArray(): string[] {
+  toArray(): ArrayFlat {
     return [this.is]
   }
 
@@ -143,19 +145,14 @@ export class ConstantNode {
       }
     }
     return +is
-    // return +(
-    //   alib && is in alib && typeof alib[is] !== 'function' ? alib[is]
-    //     : slib && is in slib && typeof slib[is] !== 'function' ? slib[is]
-    //       : is
-    // )
   }
 }
 
 //
 // FunctionNode
 //
-function map_toArr(v: INode): string[] {
-  return v.toArray()
+function map_toArr(v: INode, k: number): ArrayFlat {
+  return k === 0 ? v.toArray() : concat(',', v.toArray())
 }
 function map_calculate(this: MathLib[], v: INode): number {
   return v.calculate.apply(void 0, this)
@@ -170,7 +167,7 @@ export class FunctionNode {
     this.isArgs = args
   }
 
-  toArray(): string[] {
+  toArray(): ArrayFlat {
     return concat(this.is + '(', concat.apply(void 0, this.isArgs.map(map_toArr)), ')') as any
   }
 
@@ -217,7 +214,7 @@ export class OperatorNode {
     this.isRight = right
   }
 
-  toArray(): string[] {
+  toArray(): ArrayFlat {
     const is = this.is
     const isLeftBlock = this.isLeft
     const isRightBlock = this.isRight
@@ -255,7 +252,7 @@ export class OperatorNode {
           ? isRightBlock && (is === '-' || is === '!' || is === '~')
             ? is + isRight
             : isRight
-          : is === '!' || is === '~' ? 'NaN' : isLeft + ' ' + is + ' ' + isRight
+          : is === '!' || is === '~' ? 'NaN' : '(' + isLeft + ' ' + is + ' ' + isRight + ')'
     )
   }
 
@@ -422,11 +419,11 @@ function parse(
       if (f > -1 && f < A.length) {
         // TODO: нужно оптимизировать эту херню
         // она нужна для унарных символов и для работы процентов там где нужно
-        if (i > 0 && (
-          // 3% % ---2
-          OPERATORS[A[f - 1]] && A[f - 1] !== '%' //  || A[f - 2] === '%' ||
-          // 4%
-          // A[f] === '%' && (!A[f + 1] || OPERATORS[A[f + 1]] < OPERATORS['~'])
+        if (i > 0 && A[f - 1] !== '%' && (
+          // 3 - ---2
+          OPERATORS[A[f - 1]] ||
+          // 4%%%
+          A[f] === '%' && (!A[f + 1] || OPERATORS[A[f + 1]] < OPERATORS['~'])
         )) {
           continue
         }
