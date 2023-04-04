@@ -7,7 +7,7 @@ export declare class ProgramNode {
     type: 'Program';
     is: INode | undefined;
     constructor(data: INode | undefined);
-    toArray(): ArrayFlat;
+    toArray(parenthesis?: boolean): ArrayFlat;
     toString(): string;
     calculate(...funcs: MathLib[]): number;
 }
@@ -15,7 +15,7 @@ export declare class ParenthesisNode {
     type: 'Parenthesis';
     is: INode | undefined;
     constructor(data: INode | undefined);
-    toArray(): ArrayFlat;
+    toArray(parenthesis?: boolean): ArrayFlat;
     toString(): string;
     calculate(...funcs: MathLib[]): number;
 }
@@ -25,7 +25,7 @@ export declare class ConditionalNode {
     isTrue: INode | undefined;
     isFalse: INode | undefined;
     constructor(falseExp: INode | undefined, trueExp: INode | undefined, condition: INode | undefined);
-    toArray(): ArrayFlat;
+    toArray(parenthesis?: boolean): ArrayFlat;
     toString(): string;
     calculate(...funcs: MathLib[]): number;
 }
@@ -42,7 +42,7 @@ export declare class FunctionNode {
     is: string;
     isArgs: INode[];
     constructor(a: string, args: INode[]);
-    toArray(): ArrayFlat;
+    toArray(parenthesis?: boolean): ArrayFlat;
     toString(): string;
     calculate(...funcs: MathLib[]): number;
 }
@@ -52,7 +52,7 @@ export declare class OperatorNode {
     isLeft: INode | undefined;
     isRight: INode | undefined;
     constructor(operator: string, right: INode | undefined, left: INode | undefined);
-    toArray(): ArrayFlat;
+    toArray(parenthesis?: boolean): ArrayFlat;
     toString(): string;
     calculate(...funcs: MathLib[]): number;
 }

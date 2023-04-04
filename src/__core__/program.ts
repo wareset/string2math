@@ -1,8 +1,10 @@
-import { concat, last } from './utils'
+import { concat, last, is_equal_with_zero } from './utils'
 
 // |\[[^\]]*\]
-const REG =
+const REG_FOR_OPERATORS =
   /\?\??|\|\|?|\*\*?|&&?|<<|>>>?|[!=]=?=?|[<>]=?|(?<!\d\.?[eE])[-+]|[,:~^%/()[\]]/g
+
+const REG_FOR_FNS = /^[a-z][$\w]*$/
 
 // Program
 // Constant
@@ -16,6 +18,7 @@ const REG =
 type INode = OperatorNode | ParenthesisNode | FunctionNode | ConstantNode | ConditionalNode
 
 type MathLib = { [key: string]: any }
+// type MathLibs = MathLib[] | IArguments
 
 type ArrayFlat = string[] // | (string | ArrayFlat)[]
 
@@ -30,8 +33,8 @@ export class ProgramNode {
     this.is = data
   }
 
-  toArray(): ArrayFlat {
-    return this.is ? this.is.toArray() : ['NaN']
+  toArray(parenthesis?: boolean): ArrayFlat {
+    return this.is ? this.is.toArray(parenthesis) : ['NaN']
   }
 
   toString(): string {
@@ -40,7 +43,7 @@ export class ProgramNode {
 
   calculate(...funcs: MathLib[]): number
   calculate(): number {
-    return this.is ? this.is.calculate(arguments) : NaN
+    return this.is ? this.is.calculate.apply(this.is, arguments as any) : NaN
   }
 }
 
@@ -55,8 +58,10 @@ export class ParenthesisNode {
     this.is = data
   }
 
-  toArray(): ArrayFlat {
-    return concat('(', this.is ? this.is.toArray() : 'NaN', ')')
+  toArray(parenthesis?: boolean): ArrayFlat {
+    const is = this.is
+    const res = concat(is ? is.toArray(parenthesis) : 'NaN')
+    return parenthesis && res[0] !== '(' ? concat('(', res, ')') : res
   }
 
   toString(): string {
@@ -65,7 +70,7 @@ export class ParenthesisNode {
 
   calculate(...funcs: MathLib[]): number
   calculate(): number {
-    return this.is ? this.is.calculate(arguments) : NaN
+    return this.is ? this.is.calculate.apply(this.is, arguments as any) : NaN
   }
 }
 
@@ -88,18 +93,19 @@ export class ConditionalNode {
     this.isFalse = falseExp
   }
 
-  toArray(): ArrayFlat {
-    return concat(
-      this.is ? this.is.toArray() : 'NaN',
+  toArray(parenthesis?: boolean): ArrayFlat {
+    const res = concat(
+      this.is ? this.is.toArray(parenthesis) : 'NaN',
       '?',
-      this.isTrue ? this.isTrue.toArray() : 'NaN',
+      this.isTrue ? this.isTrue.toArray(parenthesis) : 'NaN',
       ':',
-      this.isFalse ? this.isFalse.toArray() : 'NaN',
+      this.isFalse ? this.isFalse.toArray(parenthesis) : 'NaN',
     )
+    return parenthesis ? concat('(', res, ')') : res
   }
 
   toString(): string {
-    return `(${this.is || NaN} ? ${this.isTrue || NaN} : ${this.isFalse || NaN})`
+    return `${this.is || NaN} ? ${this.isTrue || NaN} : ${this.isFalse || NaN}`
   }
 
   calculate(...funcs: MathLib[]): number
@@ -108,10 +114,10 @@ export class ConditionalNode {
     const isTrueBlock = this.isTrue
     const isFalseBlock = this.isFalse
 
-    const a = arguments
-    return isBlock ? isBlock.calculate(a) : NaN
-      ? isTrueBlock ? isTrueBlock.calculate(a) : NaN
-      : isFalseBlock ? isFalseBlock.calculate(a) : NaN
+    const a = arguments as any
+    return isBlock ? isBlock.calculate.apply(isBlock, a) : NaN
+      ? isTrueBlock ? isTrueBlock.calculate.apply(isTrueBlock, a) : NaN
+      : isFalseBlock ? isFalseBlock.calculate.apply(isTrueBlock, a) : NaN
   }
 }
 
@@ -151,11 +157,11 @@ export class ConstantNode {
 //
 // FunctionNode
 //
-function map_toArr(v: INode, k: number): ArrayFlat {
-  return k === 0 ? v.toArray() : concat(',', v.toArray())
+function map_toArr(this: [boolean], v: INode, k: number): ArrayFlat {
+  return k === 0 ? v.toArray(this[0]) : concat(',', v.toArray(this[0]))
 }
 function map_calculate(this: MathLib[], v: INode): number {
-  return v.calculate.apply(void 0, this)
+  return v.calculate.apply(v, this)
 }
 export class FunctionNode {
   type: 'Function'
@@ -167,8 +173,8 @@ export class FunctionNode {
     this.isArgs = args
   }
 
-  toArray(): ArrayFlat {
-    return concat(this.is + '(', concat.apply(void 0, this.isArgs.map(map_toArr)), ')') as any
+  toArray(parenthesis?: boolean): ArrayFlat {
+    return concat(this.is, '(', concat.apply(void 0, this.isArgs.map(map_toArr, [parenthesis])), ')') as any
   }
 
   toString(): string {
@@ -214,24 +220,22 @@ export class OperatorNode {
     this.isRight = right
   }
 
-  toArray(): ArrayFlat {
+  toArray(parenthesis?: boolean): ArrayFlat {
     const is = this.is
     const isLeftBlock = this.isLeft
     const isRightBlock = this.isRight
 
-    const isLeft = isLeftBlock ? isLeftBlock.toArray() : ['NaN']
-    const isRight = isRightBlock ? isRightBlock.toArray() : ['NaN']
+    const isLeft = isLeftBlock ? isLeftBlock.toArray(parenthesis) : ['NaN']
+    const isRight = isRightBlock ? isRightBlock.toArray(parenthesis) : ['NaN']
 
     return (
       !isRightBlock
-        ? isLeftBlock && is === '%'
-          ? concat(isLeft, is)
-          : isLeft
+        ? isLeft
         : !isLeftBlock
-          ? isRightBlock && (is === '-' || is === '!' || is === '~')
-            ? concat(is, isRight)
-            : isRight
-          : is === '!' || is === '~' ? ['NaN'] : concat(isLeft, is, isRight)
+          ? is === '!' || is === '~' || is === '-' ? concat(is, isRight) : isRight
+          : is === '!' || is === '~' ? ['NaN'] : parenthesis
+            ? concat('(', isLeft, is, isRight, ')')
+            : concat(isLeft, is, isRight)
     )
   }
 
@@ -245,14 +249,10 @@ export class OperatorNode {
 
     return (
       !isRightBlock
-        ? isLeftBlock && is === '%'
-          ? isLeft + is
-          : isLeft
+        ? isLeft
         : !isLeftBlock
-          ? isRightBlock && (is === '-' || is === '!' || is === '~')
-            ? is + isRight
-            : isRight
-          : is === '!' || is === '~' ? 'NaN' : '(' + isLeft + ' ' + is + ' ' + isRight + ')'
+          ? is === '!' || is === '~' || is === '-' ? is + isRight : isRight
+          : is === '!' || is === '~' ? 'NaN' : isLeft + ' ' + is + ' ' + isRight
     )
   }
 
@@ -263,60 +263,68 @@ export class OperatorNode {
     const isLeftBlock = this.isLeft
     const isRightBlock = this.isRight
 
-    const a = arguments
-    const isLeft = isLeftBlock ? isLeftBlock.calculate(a) : NaN
-    const isRight = isRightBlock ? isRightBlock.calculate(a) : NaN
+    const a = arguments as any
+    const isLeft = isLeftBlock ? isLeftBlock.calculate.apply(isLeftBlock, a) : NaN
+    const isRight = isRightBlock ? isRightBlock.calculate.apply(isRightBlock, a) : NaN
+
+    console.log(isLeft, isRight)
 
     if (!isRightBlock) {
-      if (isLeftBlock) {
-        if (is === '%') return div(isLeft, 100)
-      }
       return isLeft
+    }
+
+    let fn!: Function
+
+    for (let i = a.length; i-- > 0;) {
+      if (is in a[i] && typeof a[i][is] === 'function') { fn = a[i][is]; break }
     }
     
     if (!isLeftBlock) {
-      if (isRightBlock) {
-        if (is === '-') return -isRight
-        if (is === '!') return +!isRight
-        if (is === '~') return ~isRight
-        // if (is === '+') return isRight
-      }
+      if (is === '-') return fn ? +fn(0, isRight) : -isRight
+      if (is === '!') return fn ? +fn(isRight) : +!isRight
+      if (is === '~') return fn ? +fn(isRight) : ~isRight
       return isRight
     }
 
-    for (let i = a.length; i-- > 0;) {
-      if (is in a[i] && typeof a[i][is] === 'function') {
-        return +a[i][is](isLeft, isRight)
-      }
-    }
-
+    if (fn) return +fn(isLeft, isRight)
     // eslint-disable-next-line default-case
     switch (is) {
+      // 14
       // case '!': return NaN
       // case '~': return NaN
+      // 13
       case '**': return exp(isLeft, isRight)
+      // 12
       case '*': return mul(isLeft, isRight)
       case '/': return div(isLeft, isRight)
       case '%': return rem(isLeft, isRight)
+      // 11
       case '+': return add(isLeft, isRight)
       case '-': return add(isLeft, -isRight)
+      // 10
       case '<<': return isLeft << isRight
       case '>>': return isLeft >> isRight
       case '>>>': return isLeft >>> isRight
+      // 9
       case '<': return isLeft < isRight ? 1 : 0
       case '<=': return isLeft <= isRight ? 1 : 0
       case '>': return isLeft > isRight ? 1 : 0
       case '>=': return isLeft >= isRight ? 1 : 0
+      // 8
       case '=':
-      case '==':
-      case '===': return isLeft === isRight ? 1 : 0
-      // case '!':
-      case '!=':
-      case '!==': return isLeft !== isRight ? 1 : 0
+      case '==': return isLeft === isRight ? 1 : 0
+      case '===': return is_equal_with_zero(isLeft, isRight) ? 1 : 0
+      case '!=': return isLeft !== isRight ? 1 : 0
+      case '!==': return is_equal_with_zero(isLeft, isRight) ? 0 : 1
+      // 7
       case '&': return isLeft & isRight
+      // 6
       case '^': return isLeft ^ isRight
+      // 5
       case '|': return isLeft | isRight
+      // 4
       case '&&': return isLeft ? isRight : isLeft
+      // 3
       case '||': return isLeft ? isLeft : isRight
       case '??': return isLeft === isLeft ? isLeft : isRight
     }
@@ -417,16 +425,6 @@ function parse(
     for (let a = operators[deep], f: number, i = a.length; i-- > 0;) {
       f = a[i] - offset
       if (f > -1 && f < A.length) {
-        // TODO: нужно оптимизировать эту херню
-        // она нужна для унарных символов и для работы процентов там где нужно
-        if (i > 0 && A[f - 1] !== '%' && (
-          // 3 - ---2
-          OPERATORS[A[f - 1]] ||
-          // 4%%%
-          A[f] === '%' && (!A[f + 1] || OPERATORS[A[f + 1]] < OPERATORS['~'])
-        )) {
-          continue
-        }
         a.splice(i, 1)
         return new OperatorNode(
           A[f],
@@ -467,11 +465,11 @@ function parse(
 }
 
 function setOperator(
-  operators: OperatorsTmp, deep: number, priority: number, a: string[]
+  operators: OperatorsTmp, deep: number, priority: number, A: string[]
 ): void {
   operators[deep] || (operators[deep] = [])
   operators[deep][priority] || (operators[deep][priority] = [])
-  operators[deep][priority][priority === OPERATORS['**'] ? 'unshift' : 'push'](a.length)
+  operators[deep][priority][priority === OPERATORS['**'] ? 'unshift' : 'push'](A.length)
 }
 
 function setMultiply(
@@ -484,7 +482,7 @@ function setMultiply(
 // 
 export function createProgram(source: string): ProgramNode {
   source = '(' + source + ')'
-  REG.lastIndex = 0
+  REG_FOR_OPERATORS.lastIndex = 0
   const A: string[] = []
   let idx = 0
   let v: string, vLast: string = '', vAny: string
@@ -495,11 +493,14 @@ export function createProgram(source: string): ProgramNode {
   const conditions: Parenthsis_and_Conditions = {}
   const conditionsTmp: Parenthsis_and_Conditions = {}
 
+  let d = OPERATORS['!']
+  let priority: number
+
   const commas: Operators = {}
   const operators: Operators = {}
   const operatorsTmp: OperatorsTmp = {}
 
-  for (let m: RegExpExecArray; m = REG.exec(source)!;) {
+  for (let m: RegExpExecArray; m = REG_FOR_OPERATORS.exec(source)!;) {
     // console.log(m)
 
     switch (v = m[0]) {
@@ -524,7 +525,7 @@ export function createProgram(source: string): ProgramNode {
             parenthsisTmp[deep] || (parenthsisTmp[deep] = [])
             parenthsisTmp[deep].push({ f: A.length, s: -1 })
             if (vLast) {
-              if (/^[a-z][$\w]*$/.test(vLast)) {
+              if (REG_FOR_FNS.test(vLast)) {
                 if (tmp = parenthsisTmp[deep] && last(parenthsisTmp[deep])) tmp.f--
               } else if (vLast !== '(' && !OPERATORS[vLast]) {
                 setMultiply(operatorsTmp, deep, A)
@@ -569,14 +570,18 @@ export function createProgram(source: string): ProgramNode {
                 break
               }
               default: {
-                setOperator(operatorsTmp, deep, OPERATORS[v], A)
+                if (vLast === '(' || OPERATORS[vLast] > 0) {
+                  if (v === '-' || v === '!' || v === '~') priority = ++d
+                  else { idx = m.index + v.length; continue }
+                } else priority = OPERATORS[v]
+                setOperator(operatorsTmp, deep, priority, A)
               }
             }
           }
         }
     
-        A.push(vLast = v)
         idx = m.index + v.length
+        A.push(vLast = OPERATORS[v] === 8 ? v[0] + '=' + (v[2] || '') : v)
       }
     }
   }
