@@ -4,7 +4,7 @@ import { concat, last, is_equal_with_zero } from './utils'
 const REG_FOR_OPERATORS =
   /\?\??|\|\|?|\*\*?|&&?|<<|>>>?|[!=]=?=?|[<>]=?|(?<!\d\.?[eE])[-+]|[,:~^%/()[\]]/g
 
-const REG_FOR_FNS = /^[a-z][$\w]*$/
+// const REG_FOR_FNS = /^[a-z][$\w]*$/
 
 // Program
 // Constant
@@ -33,8 +33,8 @@ export class ProgramNode {
     this.is = data
   }
 
-  toArray(parenthesis?: boolean): ArrayFlat {
-    return this.is ? this.is.toArray(parenthesis) : ['NaN']
+  toArray(isSafe?: boolean): ArrayFlat {
+    return this.is ? this.is.toArray(isSafe) : ['NaN']
   }
 
   toString(): string {
@@ -58,10 +58,10 @@ export class ParenthesisNode {
     this.is = data
   }
 
-  toArray(parenthesis?: boolean): ArrayFlat {
+  toArray(isSafe?: boolean): ArrayFlat {
     const is = this.is
-    const res = concat(is ? is.toArray(parenthesis) : 'NaN')
-    return parenthesis && res[0] !== '(' ? concat('(', res, ')') : res
+    const res = concat(is ? is.toArray(isSafe) : 'NaN')
+    return isSafe && res[0] !== '(' ? concat('(', res, ')') : res
   }
 
   toString(): string {
@@ -93,15 +93,15 @@ export class ConditionalNode {
     this.isFalse = falseExp
   }
 
-  toArray(parenthesis?: boolean): ArrayFlat {
+  toArray(isSafe?: boolean): ArrayFlat {
     const res = concat(
-      this.is ? this.is.toArray(parenthesis) : 'NaN',
+      this.is ? this.is.toArray(isSafe) : 'NaN',
       '?',
-      this.isTrue ? this.isTrue.toArray(parenthesis) : 'NaN',
+      this.isTrue ? this.isTrue.toArray(isSafe) : 'NaN',
       ':',
-      this.isFalse ? this.isFalse.toArray(parenthesis) : 'NaN',
+      this.isFalse ? this.isFalse.toArray(isSafe) : 'NaN',
     )
-    return parenthesis ? concat('(', res, ')') : res
+    return isSafe ? concat('(', res, ')') : res
   }
 
   toString(): string {
@@ -173,8 +173,8 @@ export class FunctionNode {
     this.isArgs = args
   }
 
-  toArray(parenthesis?: boolean): ArrayFlat {
-    return concat(this.is, '(', concat.apply(void 0, this.isArgs.map(map_toArr, [parenthesis])), ')') as any
+  toArray(isSafe?: boolean): ArrayFlat {
+    return concat(this.is, '(', concat.apply(void 0, this.isArgs.map(map_toArr, [isSafe])), ')') as any
   }
 
   toString(): string {
@@ -220,20 +220,20 @@ export class OperatorNode {
     this.isRight = right
   }
 
-  toArray(parenthesis?: boolean): ArrayFlat {
+  toArray(isSafe?: boolean): ArrayFlat {
     const is = this.is
     const isLeftBlock = this.isLeft
     const isRightBlock = this.isRight
 
-    const isLeft = isLeftBlock ? isLeftBlock.toArray(parenthesis) : ['NaN']
-    const isRight = isRightBlock ? isRightBlock.toArray(parenthesis) : ['NaN']
+    const isLeft = isLeftBlock ? isLeftBlock.toArray(isSafe) : ['NaN']
+    const isRight = isRightBlock ? isRightBlock.toArray(isSafe) : ['NaN']
 
     return (
       !isRightBlock
         ? isLeft
         : !isLeftBlock
           ? is === '!' || is === '~' || is === '-' ? concat(is, isRight) : isRight
-          : is === '!' || is === '~' ? ['NaN'] : parenthesis
+          : is === '!' || is === '~' ? ['NaN'] : isSafe
             ? concat('(', isLeft, is, isRight, ')')
             : concat(isLeft, is, isRight)
     )
@@ -267,8 +267,6 @@ export class OperatorNode {
     const isLeft = isLeftBlock ? isLeftBlock.calculate.apply(isLeftBlock, a) : NaN
     const isRight = isRightBlock ? isRightBlock.calculate.apply(isRightBlock, a) : NaN
 
-    console.log(isLeft, isRight)
-
     if (!isRightBlock) {
       return isLeft
     }
@@ -280,7 +278,7 @@ export class OperatorNode {
     }
     
     if (!isLeftBlock) {
-      if (is === '-') return fn ? +fn(0, isRight) : -isRight
+      if (is === '-') return fn ? +fn(-isRight, 0) : -isRight
       if (is === '!') return fn ? +fn(isRight) : +!isRight
       if (is === '~') return fn ? +fn(isRight) : ~isRight
       return isRight
@@ -400,7 +398,7 @@ function parse(
       }
     }
   }
-
+  //- ? :
   if (conditions[deep] && conditions[deep].length) {
     for (let a = conditions[deep], f: number, s: number, i = a.length; i-- > 0;) {
       f = a[i].f - offset, s = a[i].s - offset
@@ -420,7 +418,7 @@ function parse(
       }
     }
   }
-
+  // /*-+
   if (operators[deep] && operators[deep].length) {
     for (let a = operators[deep], f: number, i = a.length; i-- > 0;) {
       f = a[i] - offset
@@ -438,7 +436,7 @@ function parse(
       }
     }
   }
-
+  // ()
   if (parenthsis[deep] && parenthsis[deep].length) {
     for (let a = parenthsis[deep], f: number, s: number, i = a.length; i-- > 0;) {
       f = a[i].f - offset, s = a[i].s - offset
@@ -524,12 +522,16 @@ export function createProgram(source: string): ProgramNode {
           case '(': {
             parenthsisTmp[deep] || (parenthsisTmp[deep] = [])
             parenthsisTmp[deep].push({ f: A.length, s: -1 })
-            if (vLast) {
-              if (REG_FOR_FNS.test(vLast)) {
-                if (tmp = parenthsisTmp[deep] && last(parenthsisTmp[deep])) tmp.f--
-              } else if (vLast !== '(' && !OPERATORS[vLast]) {
+            if (vLast && vLast !== '(' && !(OPERATORS[vLast] > 0)) {
+              if (
+                !source[m.index - 1].trim() ||
+                vLast === 'NaN' || '' + +vLast !== 'NaN'
+              ) {
                 setMultiply(operatorsTmp, deep, A)
                 if (tmp = parenthsisTmp[deep] && last(parenthsisTmp[deep])) tmp.f++
+              } else {
+                // eslint-disable-next-line no-lonely-if
+                if (tmp = parenthsisTmp[deep] && last(parenthsisTmp[deep])) tmp.f--
               }
             }
             deep++
@@ -545,7 +547,7 @@ export function createProgram(source: string): ProgramNode {
             break
           }
           default: {
-            if (vLast === ')' && !OPERATORS[v]) {
+            if (vLast === ')' && !(OPERATORS[v] > 0)) {
               setMultiply(operatorsTmp, deep, A)
               vLast = '*'
             }
