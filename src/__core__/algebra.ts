@@ -16,7 +16,7 @@ export type Raw = {
 }
 
 export function num2raw(s: number): Raw {
-  const res = (+s + '').match(REG)!
+  const res = ((s = +s) !== 0 || 1 / s > 0 ? '' + s : '-0').match(REG)!
 
   return {
     isNaN     : !!res[1],
