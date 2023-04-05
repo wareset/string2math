@@ -38,13 +38,21 @@ export function raw2num(raw: Raw): number {
 //
 export function exp(l: number, r: number): number {
   l = +l, r = +r
+  // console.log('exp', [l, r, l ** r])
+
   if (r === 0) return 1
   if (r !== r || l !== l) return NaN
-  if (r === Infinity) return r
-  if (l === 0 || r === -Infinity) return 0
-  if (l === Infinity || l === -Infinity) return l
+  if (r === Infinity) {
+    return !l ? 0 : l === -1 || l === 1 ? NaN : l > 1 || l < -1 ? r : 0
+  }
+  if (r === -Infinity) {
+    return !l ? -r : l === -1 || l === 1 ? NaN : l > 1 || l < -1 ? 0 : -r
+  }
+  // if (l === 0 || r === -Infinity) return 0
+  // if (l === Infinity || l === -Infinity) return l
 
   if (r < 0) l = div(1, l), r = -r
+  
   let res = 1, i = 0
   for (;++i <= r;) res = mul(res, l)
   if ((r = add(r, 1 - i)) > 0) res = mul(res, Math.pow(l, r))
