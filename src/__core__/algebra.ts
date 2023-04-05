@@ -55,7 +55,10 @@ export function exp(l: number, r: number): number {
   
   let res = 1, i = 0
   for (;++i <= r;) res = mul(res, l)
-  if ((r = add(r, 1 - i)) > 0) res = mul(res, Math.pow(l, r))
+  if ((r = add(r, 1 - i)) > 0) {
+    res = +('' + mul(res, Math.pow(l, r)))
+    res < 0 && (res = -res)
+  }
   return res
 }
 

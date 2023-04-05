@@ -34,9 +34,9 @@
     }
   },
   "scripts": {
-    "test": "jest --",
     "build": "dester --ie -m",
-    "dev": "dester --ie -mw"
+    "dev": "dester --ie -mw",
+    "test": "node ./test/index.js"
   },
   "devDependencies": {
     "dester": "1.0.x",
