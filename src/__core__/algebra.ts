@@ -62,20 +62,18 @@ export function exp(l: number, r: number): number {
   return res
 }
 
+function getExponentDiff(l: Raw, r: Raw): number {
+  const le = l.exponent, re = r.exponent
+  return le > re ? re : le
+}
+
 //
 // Multiplication (*) … * …
 //
 export function mul(_l: number, _r: number): number {
-  const l = num2raw(_l), r = num2raw(_r)
+  const l = num2raw(_l = +_l), r = num2raw(_r = +_r)
   // console.log('mul', _l * _r, { ...l }, { ...r })
-  // const a = l.exponent + r.exponent
-  // l.exponent = r.exp = 0
-  // const c = num2raw(raw2num(l) * raw2num(r))
-  // c.exponent += a
-  // return raw2num(c)
-
-  const le = l.exponent, re = r.exponent
-  const a = (le > re ? re - le : le - re) || le
+  const a = getExponentDiff(l, r)
   l.exponent -= a, r.exponent -= a
   const c = num2raw(raw2num(l) * raw2num(r))
   c.exponent += a + a
@@ -86,11 +84,11 @@ export function mul(_l: number, _r: number): number {
 // Division (/) … / …
 //
 export function div(_l: number, _r: number): number {
-  const l = num2raw(_l), r = num2raw(_r)
+  const l = num2raw(_l = +_l), r = num2raw(_r = +_r)
   // console.log('div', _l / _r, { ...l }, { ...r })
-  const le = l.exponent, re = r.exponent
-  const a = (le > re ? re - le : le - re) || le
+  const a = getExponentDiff(l, r)
   l.exponent -= a, r.exponent -= a
+  // console.log([a, raw2num(l), raw2num(r)])
   return raw2num(l) / raw2num(r)
 }
 
@@ -98,11 +96,10 @@ export function div(_l: number, _r: number): number {
 // Remainder (%) … % …
 //
 export function rem(_l: number, _r: number): number {
-  const l = num2raw(_l), r = num2raw(_r)
+  const l = num2raw(_l = +_l), r = num2raw(_r = +_r)
   // console.log('rem', _l % _r, { ...l }, { ...r })
-  const le = l.exponent, re = r.exponent
-  const a = (le > re ? re - le : le - re) || le
-  l.exponent -= a, r.exponent -= a
+  const a = getExponentDiff(l, r)
+  // console.log([a, raw2num(l), raw2num(r)])
   const c = num2raw(raw2num(l) % raw2num(r))
   c.exponent += a
   return raw2num(c)
@@ -112,10 +109,13 @@ export function rem(_l: number, _r: number): number {
 // Addition (+) … + …
 //
 export function add(_l: number, _r: number): number {
-  const l = num2raw(_l), r = num2raw(_r)
+  const l = num2raw(_l = +_l), r = num2raw(_r = +_r)
   // console.log('add', _l + _r, { ...l }, { ...r })
-  const le = l.exponent, re = r.exponent
-  const a = (le > re ? re - le : le - re) || le
+  // if (l.isMinus !== r.isMinus) {
+  //   return r.isMinus ? sub(_l, -_r) : sub(_r, -_l)
+  // }
+
+  const a = getExponentDiff(l, r)
   l.exponent -= a, r.exponent -= a
   const c = num2raw(raw2num(l) + raw2num(r))
   c.exponent += a
@@ -126,5 +126,13 @@ export function add(_l: number, _r: number): number {
 // Subtraction (-) … - …n
 //
 export function sub(_l: number, _r: number): number {
-  return add(_l, -_r)
+  const l = num2raw(_l = +_l), r = num2raw(_r = +_r)
+  // console.log('sub', _l - _r, { ...l }, { ...r })
+  // if (l.isMinus !== r.isMinus) return add(_l, -_r)
+
+  const a = getExponentDiff(l, r)
+  l.exponent -= a, r.exponent -= a
+  const c = num2raw(raw2num(l) - raw2num(r))
+  c.exponent += a
+  return raw2num(c)
 }

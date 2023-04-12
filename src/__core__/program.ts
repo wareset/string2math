@@ -41,8 +41,8 @@ export class ProgramNode {
     return '' + (this.is || NaN)
   }
 
-  calculate(...funcs: MathLib[]): number
-  calculate(): number {
+  calculate(...funcs: MathLib[]): any
+  calculate(): any {
     return this.is ? this.is.calculate.apply(this.is, arguments as any) : NaN
   }
 }
@@ -68,8 +68,8 @@ export class ParenthesisNode {
     return '(' + (this.is || NaN) + ')'
   }
 
-  calculate(...funcs: MathLib[]): number
-  calculate(): number {
+  calculate(...funcs: MathLib[]): any
+  calculate(): any {
     return this.is ? this.is.calculate.apply(this.is, arguments as any) : NaN
   }
 }
@@ -108,8 +108,8 @@ export class ConditionalNode {
     return `${this.is || NaN} ? ${this.isTrue || NaN} : ${this.isFalse || NaN}`
   }
 
-  calculate(...funcs: MathLib[]): number
-  calculate(): number {
+  calculate(...funcs: MathLib[]): any
+  calculate(): any {
     const isBlock = this.is
     const isTrueBlock = this.isTrue
     const isFalseBlock = this.isFalse
@@ -140,17 +140,18 @@ export class ConstantNode {
     return this.is
   }
 
-  calculate(...funcs: MathLib[]): number
-  calculate(): number {
+  calculate(...funcs: MathLib[]): any
+  calculate(): any {
     const is = this.is
     
     const a = arguments
     for (let i = a.length; i-- > 0;) {
       if (is in a[i] && typeof a[i] !== 'function') {
-        return +a[i][is]
+        return a[i][is]
       }
     }
-    return +is
+    const isn = +is
+    return isn === isn || is === 'NaN' ? isn : is
   }
 }
 
@@ -181,14 +182,14 @@ export class FunctionNode {
     return `${this.is}(${this.isArgs.join(', ')})`
   }
 
-  calculate(...funcs: MathLib[]): number
-  calculate(): number {
+  calculate(...funcs: MathLib[]): any
+  calculate(): any {
     const is = this.is
 
     const a = arguments
     for (let i = a.length; i-- > 0;) {
       if (is in a[i] && typeof a[i][is] === 'function') {
-        return +a[i][is].apply(void 0, this.isArgs.map(map_calculate, a))
+        return a[i][is].apply(void 0, this.isArgs.map(map_calculate, a))
       }
     }
     return NaN
@@ -201,7 +202,7 @@ export class FunctionNode {
 import {
   mul, div,
   rem,
-  add, // sub,
+  add, sub,
   exp
 } from './algebra'
 export class OperatorNode {
@@ -256,9 +257,9 @@ export class OperatorNode {
     )
   }
 
-  calculate(...funcs: MathLib[]): number
+  calculate(...funcs: MathLib[]): any
   // eslint-disable-next-line consistent-return
-  calculate(): number {
+  calculate(): any {
     const is = this.is
     const isLeftBlock = this.isLeft
     const isRightBlock = this.isRight
@@ -278,13 +279,13 @@ export class OperatorNode {
     }
     
     if (!isLeftBlock) {
-      if (is === '-') return fn ? +fn(-isRight, 0) : -isRight
-      if (is === '!') return fn ? +fn(isRight) : +!isRight
-      if (is === '~') return fn ? +fn(isRight) : ~isRight
+      if (is === '-') return fn ? fn(0, isRight) : -isRight
+      if (is === '!') return fn ? fn(isRight) : +!isRight
+      if (is === '~') return fn ? fn(isRight) : ~isRight
       return isRight
     }
 
-    if (fn) return +fn(isLeft, isRight)
+    if (fn) return fn(isLeft, isRight)
     // eslint-disable-next-line default-case
     switch (is) {
       // 14
@@ -298,7 +299,7 @@ export class OperatorNode {
       case '%': return rem(isLeft, isRight)
       // 11
       case '+': return add(isLeft, isRight)
-      case '-': return add(isLeft, -isRight)
+      case '-': return sub(isLeft, isRight)
       // 10
       case '<<': return isLeft << isRight
       case '>>': return isLeft >> isRight
