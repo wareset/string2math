@@ -99,6 +99,7 @@ export function rem(_l: number, _r: number): number {
   const l = num2raw(_l = +_l), r = num2raw(_r = +_r)
   // console.log('rem', _l % _r, { ...l }, { ...r })
   const a = getExponentDiff(l, r)
+  l.exponent -= a, r.exponent -= a
   // console.log([a, raw2num(l), raw2num(r)])
   const c = num2raw(raw2num(l) % raw2num(r))
   c.exponent += a
