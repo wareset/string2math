@@ -146,9 +146,7 @@ export class ConstantNode {
     
     const a = arguments
     for (let i = a.length; i-- > 0;) {
-      if (is in a[i] && typeof a[i] !== 'function') {
-        return a[i][is]
-      }
+      if (is in a[i] && typeof a[i][is] !== 'function') return a[i][is]
     }
     const isn = +is
     return isn === isn || is === 'NaN' ? isn : is
