@@ -1,4 +1,4 @@
-export declare type Raw = {
+export type Raw = {
     isNaN: boolean;
     isMinus: boolean;
     isInfinity: boolean;

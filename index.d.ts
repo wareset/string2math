@@ -2,7 +2,6 @@ export * from "./types";
 export { ConditionalNode } from "./types";
 export { ConstantNode } from "./types";
 export { FunctionNode } from "./types";
-export { OPERATORS } from "./types";
 export { OperatorNode } from "./types";
 export { ParenthesisNode } from "./types";
 export { ProgramNode } from "./types";

@@ -1,8 +1,8 @@
-declare type INode = OperatorNode | ParenthesisNode | FunctionNode | ConstantNode | ConditionalNode;
-declare type MathLib = {
+type INode = OperatorNode | ParenthesisNode | FunctionNode | ConstantNode | ConditionalNode;
+type MathLib = {
     [key: string]: any;
 };
-declare type ArrayFlat = string[];
+type ArrayFlat = string[];
 export declare class ProgramNode {
     type: 'Program';
     is: INode | undefined;

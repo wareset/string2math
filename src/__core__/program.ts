@@ -173,7 +173,9 @@ export class FunctionNode {
   }
 
   toArray(isSafe?: boolean): ArrayFlat {
-    return concat(this.is, '(', concat.apply(void 0, this.isArgs.map(map_toArr, [isSafe])), ')') as any
+    return concat(
+      this.is, '(', concat.apply(void 0, this.isArgs.map(map_toArr, [isSafe])), ')'
+    ) as any
   }
 
   toString(): string {
@@ -309,9 +311,11 @@ export class OperatorNode {
       case '>=': return isLeft >= isRight ? 1 : 0
       // 8
       case '=':
-      case '==': return isLeft === isRight ? 1 : 0
+      // eslint-disable-next-line eqeqeq, no-fallthrough
+      case '==': return isLeft == isRight ? 1 : 0
       case '===': return is_equal_with_zero(isLeft, isRight) ? 1 : 0
-      case '!=': return isLeft !== isRight ? 1 : 0
+      // eslint-disable-next-line eqeqeq
+      case '!=': return isLeft != isRight ? 1 : 0
       case '!==': return is_equal_with_zero(isLeft, isRight) ? 0 : 1
       // 7
       case '&': return isLeft & isRight
@@ -582,7 +586,8 @@ export function createProgram(source: string): ProgramNode {
         }
     
         idx = m.index + v.length
-        A.push(vLast = OPERATORS[v] === 8 ? v[0] + '=' + (v[2] || '') : v)
+        A.push(vLast = v)
+        // A.push(vLast = OPERATORS[v] === 8 ? v[0] + '=' + (v[2] || '') : v)
       }
     }
   }
