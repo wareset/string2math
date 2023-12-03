@@ -14,7 +14,7 @@ export {
   ConstantNode,
   FunctionNode,
   OperatorNode
-} from './__core__/program'
+} from './__core__/classes'
 
 // export const OPERATORS = {
 //   '('  : 'Opening parenthesis',
