@@ -1,16 +1,13 @@
-import { createProgram } from './__core__/program'
-export default createProgram
+export { create } from './__core__/program'
 
-export { createProgram as create }
-
-export type { NumRaw } from './__core__/algebra'
-export { num2raw, raw2num } from './__core__/algebra'
-export { add, sub, mul, div, rem, exp } from './__core__/algebra'
+// export type { NumRaw } from './__core__/algebra'
+// export { num2raw, raw2num } from './__core__/algebra'
+// export { add, sub, mul, div, rem, exp } from './__core__/algebra'
 
 export {
   ProgramNode,
-  ParenthesisNode,
-  ConditionalNode,
+  GroupingNode,
+  TernaryNode,
   ConstantNode,
   FunctionNode,
   OperatorNode
@@ -45,7 +42,7 @@ export {
 //   '&&' : 'Logical AND',
 //   '||' : 'Logical OR',
 //   '??' : 'Coalescing NaN',
-//   '?'  : 'Conditional TRUE',
-//   ':'  : 'Conditional FALSE',
+//   '?'  : 'Ternary TRUE',
+//   ':'  : 'Ternary FALSE',
 //   ','  : 'Comma',
 // } as const

@@ -1,11 +1,19 @@
-import { concat } from './utils'
+import { concat, arrayConcat } from './utils'
 
-type INode = OperatorNode | ParenthesisNode | FunctionNode | ConstantNode | ConditionalNode
+type INode = OperatorNode | GroupingNode | FunctionNode | ConstantNode | TernaryNode
 
 type MathLib = { [key: string]: any }
 // type MathLibs = MathLib[] | IArguments
 
 type ToArray = string[] // | (string | ToArray)[]
+
+function toArr(node: INode | undefined) {
+  return node ? node.toArray() : ['NaN']
+}
+
+function calc(node: INode | undefined, fns: any) {
+  return node ? node.calculate(fns) : NaN
+}
 
 // Program
 // Constant
@@ -28,49 +36,47 @@ export class ProgramNode {
   }
 
   toArray(): ToArray {
-    return this.is ? this.is.toArray() : ['NaN']
+    return toArr(this.is)
   }
 
   toString(): string {
     return '' + (this.is || NaN)
   }
 
-  calculate(...funcs: MathLib[]): any
-  calculate(): any {
-    return this.is ? this.is.calculate.apply(this.is, arguments as any) : NaN
+  calculate(fns?: MathLib[]): any {
+    return calc(this.is, fns)
   }
 }
 
 //
-// ParenthesisNode
+// GroupingNode
 //
-export class ParenthesisNode {
-  type: 'Parenthesis'
+export class GroupingNode {
+  type: 'Grouping'
   is: INode | undefined
   constructor(data: INode | undefined) {
-    this.type = 'Parenthesis'
+    this.type = 'Grouping'
     this.is = data
   }
 
   toArray(): ToArray {
-    return this.is ? this.is.toArray() : ['NaN']
+    return toArr(this.is)
   }
 
   toString(): string {
     return '' + (this.is || NaN)
   }
 
-  calculate(...funcs: MathLib[]): any
-  calculate(): any {
-    return this.is ? this.is.calculate.apply(this.is, arguments as any) : NaN
+  calculate(fns?: MathLib[]): any {
+    return calc(this.is, fns)
   }
 }
 
 //
-// ConditionalNode
+// TernaryNode
 //
-export class ConditionalNode {
-  type: 'Conditional'
+export class TernaryNode {
+  type: 'Ternary'
   is: INode | undefined
   isTrue: INode | undefined
   isFalse: INode | undefined
@@ -79,39 +85,22 @@ export class ConditionalNode {
     trueExp: INode | undefined,
     condition: INode | undefined
   ) {
-    this.type = 'Conditional'
+    this.type = 'Ternary'
     this.is = condition
     this.isTrue = trueExp
     this.isFalse = falseExp
   }
 
   toArray(): ToArray {
-    return concat(
-      '(',
-      this.is ? this.is.toArray() : 'NaN',
-      '?',
-      this.isTrue ? this.isTrue.toArray() : 'NaN',
-      ':',
-      this.isFalse ? this.isFalse.toArray() : 'NaN',
-      ')'
-    )
+    return concat('(', toArr(this.is), '?', toArr(this.isTrue), ':', toArr(this.isFalse), ')')
   }
 
   toString(): string {
     return `(${this.is || NaN} ? ${this.isTrue || NaN} : ${this.isFalse || NaN})`
   }
 
-  calculate(...funcs: MathLib[]): any
-  calculate(): any {
-    const is = this.is
-    const isTrue = this.isTrue
-    const isFalse = this.isFalse
-
-    const a = arguments as any
-    // prettier-ignore
-    return is ? is.calculate.apply(is, a) : NaN
-      ? isTrue ? isTrue.calculate.apply(isTrue, a) : NaN
-      : isFalse ? isFalse.calculate.apply(isTrue, a) : NaN
+  calculate(fns?: MathLib[]): any {
+    return calc(this.is, fns) ? calc(this.isTrue, fns) : calc(this.isFalse, fns)
   }
 }
 
@@ -134,14 +123,13 @@ export class ConstantNode {
     return '' + this.is
   }
 
-  calculate(...funcs: MathLib[]): any
-  calculate(): any {
+  calculate(fns?: MathLib[]): any {
     const is = this.is
 
-    const a = arguments
-    for (let i = a.length, v; i-- > 0; ) {
-      if (is in (v = a[i]) && typeof (v = v[is]) !== 'function') return v
-    }
+    if (fns)
+      for (let i = fns.length, v; i-- > 0; ) {
+        if (is in (v = fns[i]) && typeof (v = v[is]) !== 'function') return v
+      }
     const v = +is
     return v === v || is === 'NaN' ? v : is
   }
@@ -154,7 +142,7 @@ function map_toArr(v: INode, k: number): ToArray {
   return k === 0 ? v.toArray() : concat(',', v.toArray())
 }
 function map_calculate(this: MathLib[], v: INode): number {
-  return v.calculate.apply(v, this)
+  return v.calculate(this)
 }
 export class FunctionNode {
   type: 'Function'
@@ -167,23 +155,22 @@ export class FunctionNode {
   }
 
   toArray(): ToArray {
-    return concat(this.is + '(', concat.apply(void 0, this.isArgs.map(map_toArr)), ')') as any
+    return concat(this.is + '(', arrayConcat.apply([], this.isArgs.map(map_toArr)), ')')
   }
 
   toString(): string {
     return `${this.is}(${this.isArgs.join(', ')})`
   }
 
-  calculate(...funcs: MathLib[]): any
-  calculate(): any {
+  calculate(fns?: MathLib[]): any {
     const is = this.is
 
-    const a = arguments
-    for (let i = a.length, v; i-- > 0; ) {
-      if (is in (v = a[i]) && typeof (v = v[is]) === 'function') {
-        return v.apply(void 0, this.isArgs.map(map_calculate, a))
+    if (fns)
+      for (let i = fns.length, v; i-- > 0; ) {
+        if (is in (v = fns[i]) && typeof (v = v[is]) === 'function') {
+          return v.apply(void 0, this.isArgs.map(map_calculate, fns))
+        }
       }
-    }
     return NaN
   }
 }
@@ -209,8 +196,8 @@ export class OperatorNode {
     const isLeft = this.isLeft
     const isRight = this.isRight
 
-    const vLeft = isLeft ? isLeft.toArray() : ['NaN']
-    const vRight = isRight ? isRight.toArray() : ['NaN']
+    const vLeft = toArr(isLeft)
+    const vRight = toArr(isRight)
 
     // prettier-ignore
     return !isRight ? vLeft : !isLeft
@@ -232,38 +219,44 @@ export class OperatorNode {
       : is === '!' || is === '~' ? 'NaN' : `(${vLeft} ${is} ${vRight})`
   }
 
-  calculate(...funcs: MathLib[]): any
-  // eslint-disable-next-line consistent-return
-  calculate(): any {
+  calculate(fns?: MathLib[]): any {
     const is = this.is
     const isLeft = this.isLeft
     const isRight = this.isRight
 
-    const a = arguments as any
-    const vLeft = isLeft ? isLeft.calculate.apply(isLeft, a) : NaN
-    const vRight = isRight ? isRight.calculate.apply(isRight, a) : NaN
+    let vLeft = calc(isLeft, fns)
+    let vRight = calc(isRight, fns)
 
-    if (!isRight) {
-      return vLeft
-    }
+    if (!isRight) return vLeft
 
     let fn!: Function
-    for (let i = a.length, v; i-- > 0; ) {
-      if (is in (v = a[i]) && typeof (v = v[is]) === 'function') {
-        fn = v
-        break
+    if (fns)
+      for (let i = fns.length, v; i-- > 0; ) {
+        if (is in (v = fns[i]) && typeof (v = v[is]) === 'function') {
+          fn = v
+          break
+        }
       }
-    }
 
     if (!isLeft) {
-      if (is === '-') return fn ? fn(0, vRight) : -vRight
-      if (is === '!') return fn ? fn(vRight) : +!vRight
-      if (is === '~') return fn ? fn(vRight) : ~vRight
+      switch (is) {
+        // 14
+        case '!':
+          return fn ? fn(vRight) : +!+vRight
+        case '~':
+          return fn ? fn(vRight) : ~+vRight
+        case '+':
+          return fn ? fn(null, vRight) : +vRight
+        case '-':
+          return fn ? fn(null, vRight) : -+vRight
+      }
       return vRight
     }
 
     if (fn) return fn(vLeft, vRight)
-    // eslint-disable-next-line default-case
+
+    vLeft = +vLeft
+    vRight = +vRight
     switch (is) {
       // 14
       // case '!': return NaN
@@ -280,7 +273,7 @@ export class OperatorNode {
         return vLeft % vRight // rem(vLeft, vRight)
       // 11
       case '+':
-        return +(vLeft + vRight) // add(vLeft, vRight)
+        return vLeft + vRight // add(vLeft, vRight)
       case '-':
         return vLeft - vRight // sub(vLeft, vRight)
       // 10

@@ -1,4 +1,5 @@
-const arrayConcat = Array.prototype.concat
+export const arrayConcat = Array.prototype.concat
+
 function concat<T>(...args: (T | T[])[]): T[]
 function concat(): any {
   return arrayConcat.apply([], arguments as any)
@@ -12,6 +13,8 @@ export { concat }
 export function last<T>(a: T[]): T | undefined {
   return a[a.length - 1]
 }
+
+export const arrayPush = Array.prototype.push
 
 // export const is_equal_with_zero =
 //   Object.is ||

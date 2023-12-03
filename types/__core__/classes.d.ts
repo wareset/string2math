@@ -1,4 +1,4 @@
-type INode = OperatorNode | ParenthesisNode | FunctionNode | ConstantNode | ConditionalNode;
+type INode = OperatorNode | GroupingNode | FunctionNode | ConstantNode | ConditionalNode;
 type MathLib = {
     [key: string]: any;
 };
@@ -9,15 +9,15 @@ export declare class ProgramNode {
     constructor(data: INode | undefined);
     toArray(): ToArray;
     toString(): string;
-    calculate(...funcs: MathLib[]): any;
+    calculate(fns?: MathLib[]): any;
 }
-export declare class ParenthesisNode {
-    type: 'Parenthesis';
+export declare class GroupingNode {
+    type: 'Grouping';
     is: INode | undefined;
     constructor(data: INode | undefined);
     toArray(): ToArray;
     toString(): string;
-    calculate(...funcs: MathLib[]): any;
+    calculate(fns?: MathLib[]): any;
 }
 export declare class ConditionalNode {
     type: 'Conditional';
@@ -27,7 +27,7 @@ export declare class ConditionalNode {
     constructor(falseExp: INode | undefined, trueExp: INode | undefined, condition: INode | undefined);
     toArray(): ToArray;
     toString(): string;
-    calculate(...funcs: MathLib[]): any;
+    calculate(fns?: MathLib[]): any;
 }
 export declare class ConstantNode {
     type: 'Constant';
@@ -35,7 +35,7 @@ export declare class ConstantNode {
     constructor(a: string);
     toArray(): ToArray;
     toString(): string;
-    calculate(...funcs: MathLib[]): any;
+    calculate(fns?: MathLib[]): any;
 }
 export declare class FunctionNode {
     type: 'Function';
@@ -44,7 +44,7 @@ export declare class FunctionNode {
     constructor(a: string, args: INode[]);
     toArray(): ToArray;
     toString(): string;
-    calculate(...funcs: MathLib[]): any;
+    calculate(fns?: MathLib[]): any;
 }
 export declare class OperatorNode {
     type: 'Operator';
@@ -54,6 +54,6 @@ export declare class OperatorNode {
     constructor(operator: string, right: INode | undefined, left: INode | undefined);
     toArray(): ToArray;
     toString(): string;
-    calculate(...funcs: MathLib[]): any;
+    calculate(fns?: MathLib[]): any;
 }
 export {};

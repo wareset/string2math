@@ -1,2 +1,2 @@
 import { ProgramNode } from './classes';
-export declare function createProgram(source: string): ProgramNode;
+export declare function create(source: string): ProgramNode;

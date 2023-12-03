@@ -1,8 +1,8 @@
-import { concat, last } from './utils'
+import { concat, last, arrayPush } from './utils'
 import {
-  ProgramNode, 
-  ParenthesisNode,
-  ConditionalNode,
+  ProgramNode,
+  GroupingNode,
+  TernaryNode,
   ConstantNode,
   FunctionNode,
   OperatorNode
@@ -15,6 +15,7 @@ const REG_FOR_OPERATORS =
 // const REG_FOR_FNS = /^[a-z][$\w]*$/
 
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Operator_Precedence
+// prettier-ignore
 const OPERATORS: any = {
   // '('  : 19,
   // ')'  : 19,
@@ -59,14 +60,15 @@ type Operators = {
   [key: string]: number[]
 }
 
-type Parenthsis_and_Conditions = {
+type Grouping_and_Ternaries = {
   // deep          // first   // second
-  [key: string]: { f: number, s: number }[]
+  [key: string]: { f: number; s: number }[]
 }
 
+// prettier-ignore
 function parse(
   A: string[], deep: number, offset: number,
-  parenthsis: Parenthsis_and_Conditions, conditions: Parenthsis_and_Conditions,
+  grouping: Grouping_and_Ternaries, ternaries: Grouping_and_Ternaries,
   commas: Operators, operators: Operators
 ): any {
   // ,
@@ -76,27 +78,27 @@ function parse(
       if (f > -1 && f < A.length) {
         a.splice(i, 1)
         return concat(
-          parse(A.slice(0, f), deep, offset, parenthsis, conditions, commas, operators),
-          parse(A.slice(f + 1), deep, offset + f + 1, parenthsis, conditions, commas, operators),
+          parse(A.slice(0, f), deep, offset, grouping, ternaries, commas, operators),
+          parse(A.slice(f + 1), deep, offset + f + 1, grouping, ternaries, commas, operators),
         )
       }
     }
   }
   //- ? :
-  if (conditions[deep] && conditions[deep].length) {
-    for (let a = conditions[deep], f: number, s: number, i = a.length; i-- > 0;) {
+  if (ternaries[deep] && ternaries[deep].length) {
+    for (let a = ternaries[deep], f: number, s: number, i = a.length; i-- > 0;) {
       f = a[i].f - offset, s = a[i].s - offset
       if (f > -1 && f < A.length && s > f) {
         a.splice(i, 1)
-        return new ConditionalNode(
+        return new TernaryNode(
           last(concat(
-            parse(A.slice(s + 1), deep, offset + s + 1, parenthsis, conditions, commas, operators)
+            parse(A.slice(s + 1), deep, offset + s + 1, grouping, ternaries, commas, operators)
           )),
           last(concat(
-            parse(A.slice(f + 1, s), deep, offset + f + 1, parenthsis, conditions, commas, operators)
+            parse(A.slice(f + 1, s), deep, offset + f + 1, grouping, ternaries, commas, operators)
           )),
           last(concat(
-            parse(A.slice(0, f), deep, offset, parenthsis, conditions, commas, operators)
+            parse(A.slice(0, f), deep, offset, grouping, ternaries, commas, operators)
           )),
         )
       }
@@ -111,31 +113,31 @@ function parse(
         return new OperatorNode(
           A[f],
           last(concat(
-            parse(A.slice(f + 1), deep, offset + f + 1, parenthsis, conditions, commas, operators)
+            parse(A.slice(f + 1), deep, offset + f + 1, grouping, ternaries, commas, operators)
           )),
           last(concat(
-            parse(A.slice(0, f), deep, offset, parenthsis, conditions, commas, operators)
+            parse(A.slice(0, f), deep, offset, grouping, ternaries, commas, operators)
           )),
         )
       }
     }
   }
   // ()
-  if (parenthsis[deep] && parenthsis[deep].length) {
-    for (let a = parenthsis[deep], f: number, s: number, i = a.length; i-- > 0;) {
+  if (grouping[deep] && grouping[deep].length) {
+    for (let a = grouping[deep], f: number, s: number, i = a.length; i-- > 0;) {
       f = a[i].f - offset, s = a[i].s - offset
       if (f > -1 && f < A.length && s > f) {
         a.splice(i, 1)
         return A[f] === '('
-          ? new ParenthesisNode(
+          ? new GroupingNode(
             last(concat(
-              parse(A.slice(f + 1, s), deep + 1, offset + f + 1, parenthsis, conditions, commas, operators)
+              parse(A.slice(f + 1, s), deep + 1, offset + f + 1, grouping, ternaries, commas, operators)
             ))
           )
           : new FunctionNode(
             A[f],
             concat(
-              parse(A.slice(f + 2, s), deep + 1, offset + f + 2, parenthsis, conditions, commas, operators)
+              parse(A.slice(f + 2, s), deep + 1, offset + f + 2, grouping, ternaries, commas, operators)
             )
           )
       }
@@ -146,6 +148,7 @@ function parse(
   return val ? new ConstantNode(val) : []
 }
 
+// prettier-ignore
 function setOperator(
   operators: OperatorsTmp, deep: number, priority: number, A: string[]
 ): void {
@@ -154,6 +157,7 @@ function setOperator(
   operators[deep][priority][priority === OPERATORS['**'] ? 'unshift' : 'push'](A.length)
 }
 
+// prettier-ignore
 function setMultiply(
   operators: OperatorsTmp, deep: number, a: string[]
 ): void {
@@ -161,18 +165,18 @@ function setMultiply(
   a.push('*')
 }
 
-// 
-export function createProgram(source: string): ProgramNode {
+// prettier-ignore
+export function create(source: string): ProgramNode {
   source = '(' + source + ')'
   const A: string[] = []
   let idx = 0
   let v: string, vLast: string = '', vAny: string
   let deep = 0, squares = 0, tmp: any
 
-  const parenthsis: Parenthsis_and_Conditions = {}
-  const parenthsisTmp: Parenthsis_and_Conditions = {}
-  const conditions: Parenthsis_and_Conditions = {}
-  const conditionsTmp: Parenthsis_and_Conditions = {}
+  const grouping: Grouping_and_Ternaries = {}
+  const groupingTmp: Grouping_and_Ternaries = {}
+  const ternaries: Grouping_and_Ternaries = {}
+  const ternariesTmp: Grouping_and_Ternaries = {}
 
   let d = OPERATORS['!']
   let priority: number
@@ -204,18 +208,18 @@ export function createProgram(source: string): ProgramNode {
 
         switch (v) {
           case '(': {
-            parenthsisTmp[deep] || (parenthsisTmp[deep] = [])
-            parenthsisTmp[deep].push({ f: A.length, s: -1 })
+            groupingTmp[deep] || (groupingTmp[deep] = [])
+            groupingTmp[deep].push({ f: A.length, s: -1 })
             if (vLast && vLast !== '(' && !(OPERATORS[vLast] > 0)) {
               if (
                 !source[m.index - 1].trim() ||
                 vLast === 'NaN' || '' + +vLast !== 'NaN'
               ) {
                 setMultiply(operatorsTmp, deep, A)
-                if (tmp = parenthsisTmp[deep] && last(parenthsisTmp[deep])) tmp.f++
+                if (tmp = groupingTmp[deep] && last(groupingTmp[deep])) tmp.f++
               } else {
                 // eslint-disable-next-line no-lonely-if
-                if (tmp = parenthsisTmp[deep] && last(parenthsisTmp[deep])) tmp.f--
+                if (tmp = groupingTmp[deep] && last(groupingTmp[deep])) tmp.f--
               }
             }
             deep++
@@ -223,10 +227,10 @@ export function createProgram(source: string): ProgramNode {
           }
           case ')': {
             --deep
-            if (tmp = parenthsisTmp[deep] && last(parenthsisTmp[deep])) {
+            if (tmp = groupingTmp[deep] && last(groupingTmp[deep])) {
               tmp.s = A.length
-              ;(parenthsis[deep] || (parenthsis[deep] = []))
-                .push(parenthsisTmp[deep].pop()!)
+              ;(grouping[deep] || (grouping[deep] = []))
+                .push(groupingTmp[deep].pop()!)
             }
             break
           }
@@ -243,15 +247,15 @@ export function createProgram(source: string): ProgramNode {
                 break
               }
               case '?': {
-                conditionsTmp[deep] || (conditionsTmp[deep] = [])
-                conditionsTmp[deep].push({ f: A.length, s: -1 })
+                ternariesTmp[deep] || (ternariesTmp[deep] = [])
+                ternariesTmp[deep].push({ f: A.length, s: -1 })
                 break
               }
               case ':': {
-                if (tmp = conditionsTmp[deep] && last(conditionsTmp[deep])) {
+                if (tmp = ternariesTmp[deep] && last(ternariesTmp[deep])) {
                   tmp.s = A.length
-                  ;(conditions[deep] || (conditions[deep] = []))
-                    .push(conditionsTmp[deep].pop()!)
+                  ;(ternaries[deep] || (ternaries[deep] = []))
+                    .push(ternariesTmp[deep].pop()!)
                 }
                 break
               }
@@ -268,7 +272,6 @@ export function createProgram(source: string): ProgramNode {
     
         idx = m.index + v.length
         A.push(vLast = v)
-        // A.push(vLast = OPERATORS[v] === 8 ? v[0] + '=' + (v[2] || '') : v)
       }
     }
   }
@@ -276,13 +279,13 @@ export function createProgram(source: string): ProgramNode {
   for (const d in operatorsTmp) {
     operators[d] = []
     for (let o = operatorsTmp[d], j = o.length; j-- > 0;) {
-      if (o[j]) Array.prototype.push.apply(operators[d], o[j])
+      if (o[j]) arrayPush.apply(operators[d], o[j])
     }
   }
 
   return new ProgramNode(
     last(concat(
-      parse(A.slice(1, -1), 1, 1, parenthsis, conditions, commas, operators)
+      parse(A.slice(1, -1), 1, 1, grouping, ternaries, commas, operators)
     ))
   )
 }
