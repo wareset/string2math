@@ -164,7 +164,6 @@ function setMultiply(
 // 
 export function createProgram(source: string): ProgramNode {
   source = '(' + source + ')'
-  REG_FOR_OPERATORS.lastIndex = 0
   const A: string[] = []
   let idx = 0
   let v: string, vLast: string = '', vAny: string
@@ -182,6 +181,7 @@ export function createProgram(source: string): ProgramNode {
   const operators: Operators = {}
   const operatorsTmp: OperatorsTmp = {}
 
+  REG_FOR_OPERATORS.lastIndex = 0
   for (let m: RegExpExecArray; m = REG_FOR_OPERATORS.exec(source)!;) {
     // console.log(m)
 

@@ -3,7 +3,7 @@ export default createProgram
 
 export { createProgram as create }
 
-export type { Raw } from './__core__/algebra'
+export type { NumRaw } from './__core__/algebra'
 export { num2raw, raw2num } from './__core__/algebra'
 export { add, sub, mul, div, rem, exp } from './__core__/algebra'
 

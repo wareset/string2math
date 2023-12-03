@@ -1,11 +1,11 @@
-import { concat, is_equal_with_zero } from './utils'
+import { concat } from './utils'
 
 type INode = OperatorNode | ParenthesisNode | FunctionNode | ConstantNode | ConditionalNode
 
 type MathLib = { [key: string]: any }
 // type MathLibs = MathLib[] | IArguments
 
-type ArrayFlat = string[] // | (string | ArrayFlat)[]
+type ToArray = string[] // | (string | ToArray)[]
 
 // Program
 // Constant
@@ -27,8 +27,8 @@ export class ProgramNode {
     this.is = data
   }
 
-  toArray(isSafe?: boolean): ArrayFlat {
-    return this.is ? this.is.toArray(isSafe) : ['NaN']
+  toArray(): ToArray {
+    return this.is ? this.is.toArray() : ['NaN']
   }
 
   toString(): string {
@@ -52,14 +52,12 @@ export class ParenthesisNode {
     this.is = data
   }
 
-  toArray(isSafe?: boolean): ArrayFlat {
-    const is = this.is
-    const res = concat(is ? is.toArray(isSafe) : 'NaN')
-    return isSafe && res[0] !== '(' ? concat('(', res, ')') : res
+  toArray(): ToArray {
+    return this.is ? this.is.toArray() : ['NaN']
   }
 
   toString(): string {
-    return '(' + (this.is || NaN) + ')'
+    return '' + (this.is || NaN)
   }
 
   calculate(...funcs: MathLib[]): any
@@ -79,7 +77,7 @@ export class ConditionalNode {
   constructor(
     falseExp: INode | undefined,
     trueExp: INode | undefined,
-    condition: INode | undefined,
+    condition: INode | undefined
   ) {
     this.type = 'Conditional'
     this.is = condition
@@ -87,31 +85,33 @@ export class ConditionalNode {
     this.isFalse = falseExp
   }
 
-  toArray(isSafe?: boolean): ArrayFlat {
-    const res = concat(
-      this.is ? this.is.toArray(isSafe) : 'NaN',
+  toArray(): ToArray {
+    return concat(
+      '(',
+      this.is ? this.is.toArray() : 'NaN',
       '?',
-      this.isTrue ? this.isTrue.toArray(isSafe) : 'NaN',
+      this.isTrue ? this.isTrue.toArray() : 'NaN',
       ':',
-      this.isFalse ? this.isFalse.toArray(isSafe) : 'NaN',
+      this.isFalse ? this.isFalse.toArray() : 'NaN',
+      ')'
     )
-    return isSafe ? concat('(', res, ')') : res
   }
 
   toString(): string {
-    return `${this.is || NaN} ? ${this.isTrue || NaN} : ${this.isFalse || NaN}`
+    return `(${this.is || NaN} ? ${this.isTrue || NaN} : ${this.isFalse || NaN})`
   }
 
   calculate(...funcs: MathLib[]): any
   calculate(): any {
-    const isBlock = this.is
-    const isTrueBlock = this.isTrue
-    const isFalseBlock = this.isFalse
+    const is = this.is
+    const isTrue = this.isTrue
+    const isFalse = this.isFalse
 
     const a = arguments as any
-    return isBlock ? isBlock.calculate.apply(isBlock, a) : NaN
-      ? isTrueBlock ? isTrueBlock.calculate.apply(isTrueBlock, a) : NaN
-      : isFalseBlock ? isFalseBlock.calculate.apply(isTrueBlock, a) : NaN
+    // prettier-ignore
+    return is ? is.calculate.apply(is, a) : NaN
+      ? isTrue ? isTrue.calculate.apply(isTrue, a) : NaN
+      : isFalse ? isFalse.calculate.apply(isTrue, a) : NaN
   }
 }
 
@@ -126,32 +126,32 @@ export class ConstantNode {
     this.is = a
   }
 
-  toArray(): ArrayFlat {
+  toArray(): ToArray {
     return [this.is]
   }
 
   toString(): string {
-    return this.is
+    return '' + this.is
   }
 
   calculate(...funcs: MathLib[]): any
   calculate(): any {
     const is = this.is
-    
+
     const a = arguments
-    for (let i = a.length; i-- > 0;) {
-      if (is in a[i] && typeof a[i][is] !== 'function') return a[i][is]
+    for (let i = a.length, v; i-- > 0; ) {
+      if (is in (v = a[i]) && typeof (v = v[is]) !== 'function') return v
     }
-    const isn = +is
-    return isn === isn || is === 'NaN' ? isn : is
+    const v = +is
+    return v === v || is === 'NaN' ? v : is
   }
 }
 
 //
 // FunctionNode
 //
-function map_toArr(this: [boolean], v: INode, k: number): ArrayFlat {
-  return k === 0 ? v.toArray(this[0]) : concat(',', v.toArray(this[0]))
+function map_toArr(v: INode, k: number): ToArray {
+  return k === 0 ? v.toArray() : concat(',', v.toArray())
 }
 function map_calculate(this: MathLib[], v: INode): number {
   return v.calculate.apply(v, this)
@@ -166,10 +166,8 @@ export class FunctionNode {
     this.isArgs = args
   }
 
-  toArray(isSafe?: boolean): ArrayFlat {
-    return concat(
-      this.is, '(', concat.apply(void 0, this.isArgs.map(map_toArr, [isSafe])), ')'
-    ) as any
+  toArray(): ToArray {
+    return concat(this.is + '(', concat.apply(void 0, this.isArgs.map(map_toArr)), ')') as any
   }
 
   toString(): string {
@@ -181,9 +179,9 @@ export class FunctionNode {
     const is = this.is
 
     const a = arguments
-    for (let i = a.length; i-- > 0;) {
-      if (is in a[i] && typeof a[i][is] === 'function') {
-        return a[i][is].apply(void 0, this.isArgs.map(map_calculate, a))
+    for (let i = a.length, v; i-- > 0; ) {
+      if (is in (v = a[i]) && typeof (v = v[is]) === 'function') {
+        return v.apply(void 0, this.isArgs.map(map_calculate, a))
       }
     }
     return NaN
@@ -193,135 +191,141 @@ export class FunctionNode {
 //
 // OperatorNode
 //
-import {
-  mul, div,
-  rem,
-  add, sub,
-  exp
-} from './algebra'
+// import { mul, div, rem, add, sub, exp } from './algebra'
 export class OperatorNode {
   type: 'Operator'
   is: string
   isLeft: INode | undefined
   isRight: INode | undefined
-  constructor(
-    operator: string,
-    right: INode | undefined,
-    left: INode | undefined,
-  ) {
+  constructor(operator: string, right: INode | undefined, left: INode | undefined) {
     this.type = 'Operator'
     this.is = operator
     this.isLeft = left
     this.isRight = right
   }
 
-  toArray(isSafe?: boolean): ArrayFlat {
+  toArray(): ToArray {
     const is = this.is
-    const isLeftBlock = this.isLeft
-    const isRightBlock = this.isRight
+    const isLeft = this.isLeft
+    const isRight = this.isRight
 
-    const isLeft = isLeftBlock ? isLeftBlock.toArray(isSafe) : ['NaN']
-    const isRight = isRightBlock ? isRightBlock.toArray(isSafe) : ['NaN']
+    const vLeft = isLeft ? isLeft.toArray() : ['NaN']
+    const vRight = isRight ? isRight.toArray() : ['NaN']
 
-    return (
-      !isRightBlock
-        ? isLeft
-        : !isLeftBlock
-          ? is === '!' || is === '~' || is === '-' ? concat(is, isRight) : isRight
-          : is === '!' || is === '~' ? ['NaN'] : isSafe
-            ? concat('(', isLeft, is, isRight, ')')
-            : concat(isLeft, is, isRight)
-    )
+    // prettier-ignore
+    return !isRight ? vLeft : !isLeft
+      ? is === '!' || is === '~' || is === '-' ? concat(is, vRight) : vRight
+      : is === '!' || is === '~' ? ['NaN'] : concat('(', vLeft, is, vRight, ')')
   }
 
   toString(): string {
     const is = this.is
-    const isLeftBlock = this.isLeft
-    const isRightBlock = this.isRight
-    
-    const isLeft = '' + (isLeftBlock || NaN)
-    const isRight = '' + (isRightBlock || NaN)
+    const isLeft = this.isLeft
+    const isRight = this.isRight
 
-    return (
-      !isRightBlock
-        ? isLeft
-        : !isLeftBlock
-          ? is === '!' || is === '~' || is === '-' ? is + isRight : isRight
-          : is === '!' || is === '~' ? 'NaN' : isLeft + ' ' + is + ' ' + isRight
-    )
+    const vLeft = '' + (isLeft || NaN)
+    const vRight = '' + (isRight || NaN)
+
+    // prettier-ignore
+    return !isRight ? vLeft : !isLeft
+      ? is === '!' || is === '~' || is === '-' ? is + vRight : vRight
+      : is === '!' || is === '~' ? 'NaN' : `(${vLeft} ${is} ${vRight})`
   }
 
   calculate(...funcs: MathLib[]): any
   // eslint-disable-next-line consistent-return
   calculate(): any {
     const is = this.is
-    const isLeftBlock = this.isLeft
-    const isRightBlock = this.isRight
+    const isLeft = this.isLeft
+    const isRight = this.isRight
 
     const a = arguments as any
-    const isLeft = isLeftBlock ? isLeftBlock.calculate.apply(isLeftBlock, a) : NaN
-    const isRight = isRightBlock ? isRightBlock.calculate.apply(isRightBlock, a) : NaN
+    const vLeft = isLeft ? isLeft.calculate.apply(isLeft, a) : NaN
+    const vRight = isRight ? isRight.calculate.apply(isRight, a) : NaN
 
-    if (!isRightBlock) {
-      return isLeft
+    if (!isRight) {
+      return vLeft
     }
 
     let fn!: Function
-
-    for (let i = a.length; i-- > 0;) {
-      if (is in a[i] && typeof a[i][is] === 'function') { fn = a[i][is]; break }
-    }
-    
-    if (!isLeftBlock) {
-      if (is === '-') return fn ? fn(0, isRight) : -isRight
-      if (is === '!') return fn ? fn(isRight) : +!isRight
-      if (is === '~') return fn ? fn(isRight) : ~isRight
-      return isRight
+    for (let i = a.length, v; i-- > 0; ) {
+      if (is in (v = a[i]) && typeof (v = v[is]) === 'function') {
+        fn = v
+        break
+      }
     }
 
-    if (fn) return fn(isLeft, isRight)
+    if (!isLeft) {
+      if (is === '-') return fn ? fn(0, vRight) : -vRight
+      if (is === '!') return fn ? fn(vRight) : +!vRight
+      if (is === '~') return fn ? fn(vRight) : ~vRight
+      return vRight
+    }
+
+    if (fn) return fn(vLeft, vRight)
     // eslint-disable-next-line default-case
     switch (is) {
       // 14
       // case '!': return NaN
       // case '~': return NaN
       // 13
-      case '**': return exp(isLeft, isRight)
+      case '**':
+        return Math.pow(vLeft, vRight) // exp(vLeft, vRight)
       // 12
-      case '*': return mul(isLeft, isRight)
-      case '/': return div(isLeft, isRight)
-      case '%': return rem(isLeft, isRight)
+      case '*':
+        return vLeft * vRight // mul(vLeft, vRight)
+      case '/':
+        return vLeft / vRight // div(vLeft, vRight)
+      case '%':
+        return vLeft % vRight // rem(vLeft, vRight)
       // 11
-      case '+': return add(isLeft, isRight)
-      case '-': return sub(isLeft, isRight)
+      case '+':
+        return +(vLeft + vRight) // add(vLeft, vRight)
+      case '-':
+        return vLeft - vRight // sub(vLeft, vRight)
       // 10
-      case '<<': return isLeft << isRight
-      case '>>': return isLeft >> isRight
-      case '>>>': return isLeft >>> isRight
+      case '<<':
+        return vLeft << vRight
+      case '>>':
+        return vLeft >> vRight
+      case '>>>':
+        return vLeft >>> vRight
       // 9
-      case '<': return isLeft < isRight ? 1 : 0
-      case '<=': return isLeft <= isRight ? 1 : 0
-      case '>': return isLeft > isRight ? 1 : 0
-      case '>=': return isLeft >= isRight ? 1 : 0
+      case '<':
+        return vLeft < vRight ? 1 : 0
+      case '<=':
+        return vLeft <= vRight ? 1 : 0
+      case '>':
+        return vLeft > vRight ? 1 : 0
+      case '>=':
+        return vLeft >= vRight ? 1 : 0
       // 8
       case '=':
-      // eslint-disable-next-line eqeqeq, no-fallthrough
-      case '==': return isLeft == isRight ? 1 : 0
-      case '===': return is_equal_with_zero(isLeft, isRight) ? 1 : 0
-      // eslint-disable-next-line eqeqeq
-      case '!=': return isLeft != isRight ? 1 : 0
-      case '!==': return is_equal_with_zero(isLeft, isRight) ? 0 : 1
+      case '==':
+        return vLeft == vRight ? 1 : 0
+      case '===':
+        return vLeft === vRight ? 1 : 0
+      case '!=':
+        return vLeft != vRight ? 1 : 0
+      case '!==':
+        return vLeft !== vRight ? 1 : 0
       // 7
-      case '&': return isLeft & isRight
+      case '&':
+        return vLeft & vRight
       // 6
-      case '^': return isLeft ^ isRight
+      case '^':
+        return vLeft ^ vRight
       // 5
-      case '|': return isLeft | isRight
+      case '|':
+        return vLeft | vRight
       // 4
-      case '&&': return isLeft ? isRight : isLeft
+      case '&&':
+        return vLeft ? vRight : vLeft
       // 3
-      case '||': return isLeft ? isLeft : isRight
-      case '??': return isLeft === isLeft ? isLeft : isRight
+      case '||':
+        return vLeft ? vLeft : vRight
+      case '??':
+        return vLeft === vLeft ? vLeft : vRight
     }
     return NaN
   }

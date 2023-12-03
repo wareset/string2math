@@ -1,6 +1,7 @@
+const arrayConcat = Array.prototype.concat
 function concat<T>(...args: (T | T[])[]): T[]
 function concat(): any {
-  return Array.prototype.concat.apply([], arguments as any)
+  return arrayConcat.apply([], arguments as any)
 }
 export { concat }
 
@@ -12,10 +13,10 @@ export function last<T>(a: T[]): T | undefined {
   return a[a.length - 1]
 }
 
-export const is_equal_with_zero =
-  Object.is ||
-  ((function(x: any, y: any): boolean {
-    return x === y
-      ? x !== 0 || 1 / x === 1 / y
-      : x !== x && y !== y
-  }) as typeof Object.is)
+// export const is_equal_with_zero =
+//   Object.is ||
+//   ((function(x: any, y: any): boolean {
+//     return x === y
+//       ? x !== 0 || 1 / x === 1 / y
+//       : x !== x && y !== y
+//   }) as typeof Object.is)

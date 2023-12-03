@@ -2,12 +2,12 @@ type INode = OperatorNode | ParenthesisNode | FunctionNode | ConstantNode | Cond
 type MathLib = {
     [key: string]: any;
 };
-type ArrayFlat = string[];
+type ToArray = string[];
 export declare class ProgramNode {
     type: 'Program';
     is: INode | undefined;
     constructor(data: INode | undefined);
-    toArray(isSafe?: boolean): ArrayFlat;
+    toArray(): ToArray;
     toString(): string;
     calculate(...funcs: MathLib[]): any;
 }
@@ -15,7 +15,7 @@ export declare class ParenthesisNode {
     type: 'Parenthesis';
     is: INode | undefined;
     constructor(data: INode | undefined);
-    toArray(isSafe?: boolean): ArrayFlat;
+    toArray(): ToArray;
     toString(): string;
     calculate(...funcs: MathLib[]): any;
 }
@@ -25,7 +25,7 @@ export declare class ConditionalNode {
     isTrue: INode | undefined;
     isFalse: INode | undefined;
     constructor(falseExp: INode | undefined, trueExp: INode | undefined, condition: INode | undefined);
-    toArray(isSafe?: boolean): ArrayFlat;
+    toArray(): ToArray;
     toString(): string;
     calculate(...funcs: MathLib[]): any;
 }
@@ -33,7 +33,7 @@ export declare class ConstantNode {
     type: 'Constant';
     is: string;
     constructor(a: string);
-    toArray(): ArrayFlat;
+    toArray(): ToArray;
     toString(): string;
     calculate(...funcs: MathLib[]): any;
 }
@@ -42,7 +42,7 @@ export declare class FunctionNode {
     is: string;
     isArgs: INode[];
     constructor(a: string, args: INode[]);
-    toArray(isSafe?: boolean): ArrayFlat;
+    toArray(): ToArray;
     toString(): string;
     calculate(...funcs: MathLib[]): any;
 }
@@ -52,7 +52,7 @@ export declare class OperatorNode {
     isLeft: INode | undefined;
     isRight: INode | undefined;
     constructor(operator: string, right: INode | undefined, left: INode | undefined);
-    toArray(isSafe?: boolean): ArrayFlat;
+    toArray(): ToArray;
     toString(): string;
     calculate(...funcs: MathLib[]): any;
 }

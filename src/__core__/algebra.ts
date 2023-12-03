@@ -7,7 +7,7 @@ const REG = /^(NaN)?([-]?)(Infinity)?(\d*)\.?(\d*)[eE]?([-+]?\d*)$/
 
 const REG_ZERO = /^0+/
 
-export type Raw = {
+export type NumRaw = {
   isNaN: boolean
   isMinus: boolean
   isInfinity: boolean
@@ -15,7 +15,7 @@ export type Raw = {
   exponent: number
 }
 
-export function num2raw(s: number): Raw {
+export function num2raw(s: number): NumRaw {
   const res = ((s = +s) !== 0 || 1 / s > 0 ? '' + s : '-0').match(REG)!
 
   return {
@@ -27,7 +27,7 @@ export function num2raw(s: number): Raw {
   }
 }
 
-export function raw2num(raw: Raw): number {
+export function raw2num(raw: NumRaw): number {
   return raw.isNaN ? NaN
     : raw.isInfinity ? raw.isMinus ? -Infinity : Infinity
       : +((raw.isMinus ? '-' : '') + (raw.integer || '0') + 'e' + raw.exponent)
@@ -62,7 +62,7 @@ export function exp(l: number, r: number): number {
   return res
 }
 
-function getExponentDiff(l: Raw, r: Raw): number {
+function getExponentDiff(l: NumRaw, r: NumRaw): number {
   const le = l.exponent, re = r.exponent
   return le > re ? re : le
 }
