@@ -16,10 +16,13 @@ export function last<T>(a: T[]): T | undefined {
 
 export const arrayPush = Array.prototype.push
 
-// export const is_equal_with_zero =
-//   Object.is ||
-//   ((function(x: any, y: any): boolean {
-//     return x === y
-//       ? x !== 0 || 1 / x === 1 / y
-//       : x !== x && y !== y
-//   }) as typeof Object.is)
+export function isFunction(v: any): v is Function {
+  return typeof v === 'function'
+}
+
+const hasOwnProperty = Object.prototype.hasOwnProperty
+export const objectHasOwn =
+  Object.hasOwn ||
+  (function (o, k) {
+    return hasOwnProperty.call(o, k)
+  } as typeof Object.hasOwn)

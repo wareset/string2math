@@ -36,9 +36,9 @@ export function raw2num(raw: NumRaw): number {
 //
 // Exponentiation (**) … ** …
 //
-export function exp(l: number, r: number): number {
+export function pow(l: number, r: number): number {
   l = +l, r = +r
-  // console.log('exp', [l, r, l ** r])
+  // console.log('pow', [l, r, l ** r])
 
   if (r === 0) return 1
   if (r !== r || l !== l) return NaN

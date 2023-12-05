@@ -2,10 +2,10 @@ import { concat, last, arrayPush } from './utils'
 import {
   ProgramNode,
   GroupingNode,
-  TernaryNode,
-  ConstantNode,
+  ConditionNode,
+  ArgumentNode,
   FunctionNode,
-  OperatorNode
+  OperationNode
 } from './classes'
 
 // |\[[^\]]*\]
@@ -90,7 +90,7 @@ function parse(
       f = a[i].f - offset, s = a[i].s - offset
       if (f > -1 && f < A.length && s > f) {
         a.splice(i, 1)
-        return new TernaryNode(
+        return new ConditionNode(
           last(concat(
             parse(A.slice(s + 1), deep, offset + s + 1, grouping, ternaries, commas, operators)
           )),
@@ -110,7 +110,7 @@ function parse(
       f = a[i] - offset
       if (f > -1 && f < A.length) {
         a.splice(i, 1)
-        return new OperatorNode(
+        return new OperationNode(
           A[f],
           last(concat(
             parse(A.slice(f + 1), deep, offset + f + 1, grouping, ternaries, commas, operators)
@@ -145,7 +145,7 @@ function parse(
   }
 
   const val = A.join('')
-  return val ? new ConstantNode(val) : []
+  return val ? new ArgumentNode(val) : []
 }
 
 // prettier-ignore

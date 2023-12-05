@@ -2,15 +2,15 @@ export { create } from './__core__/program'
 
 // export type { NumRaw } from './__core__/algebra'
 // export { num2raw, raw2num } from './__core__/algebra'
-// export { add, sub, mul, div, rem, exp } from './__core__/algebra'
+// export { add, sub, mul, div, rem, pow } from './__core__/algebra'
 
 export {
   ProgramNode,
   GroupingNode,
-  TernaryNode,
-  ConstantNode,
+  ConditionNode,
+  ArgumentNode,
   FunctionNode,
-  OperatorNode
+  OperationNode
 } from './__core__/classes'
 
 // export const OPERATORS = {
@@ -42,7 +42,7 @@ export {
 //   '&&' : 'Logical AND',
 //   '||' : 'Logical OR',
 //   '??' : 'Coalescing NaN',
-//   '?'  : 'Ternary TRUE',
-//   ':'  : 'Ternary FALSE',
+//   '?'  : 'Condition TRUE',
+//   ':'  : 'Condition FALSE',
 //   ','  : 'Comma',
 // } as const
