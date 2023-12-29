@@ -244,9 +244,9 @@ export class OperationNode {
         case '~':
           return fn ? fn(vRight) : ~+vRight
         case '+':
-          return fn ? fn(null, vRight) : +vRight
+          return fn ? fn(0, vRight) : +vRight
         case '-':
-          return fn ? fn(null, vRight) : -+vRight
+          return fn ? fn(0, vRight) : -+vRight
       }
       return vRight
     }
