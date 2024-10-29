@@ -14,15 +14,12 @@ export function last<T>(a: T[]): T | undefined {
   return a[a.length - 1]
 }
 
-export const arrayPush = Array.prototype.push
-
 export function isFunction(v: any): v is Function {
   return typeof v === 'function'
 }
 
-const hasOwnProperty = Object.prototype.hasOwnProperty
 export const objectHasOwn =
   Object.hasOwn ||
   (function (o, k) {
-    return hasOwnProperty.call(o, k)
+    return Object.prototype.hasOwnProperty.call(o, k)
   } as typeof Object.hasOwn)

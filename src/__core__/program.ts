@@ -1,11 +1,11 @@
-import { concat, last, arrayPush } from './utils'
+import { concat, last } from './utils'
 import {
   ProgramNode,
   GroupingNode,
   ConditionNode,
   ArgumentNode,
   FunctionNode,
-  OperationNode
+  OperationNode,
 } from './classes'
 
 // |\[[^\]]*\]
@@ -276,10 +276,11 @@ export function create(source: string): ProgramNode {
     }
   }
 
+  const push = Array.prototype.push
   for (const d in operatorsTmp) {
     operators[d] = []
     for (let o = operatorsTmp[d], j = o.length; j-- > 0;) {
-      if (o[j]) arrayPush.apply(operators[d], o[j])
+      if (o[j]) push.apply(operators[d], o[j])
     }
   }
 

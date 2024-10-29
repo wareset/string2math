@@ -90,7 +90,15 @@ export class ConditionNode {
   }
 
   toArray(): ToArray {
-    return concat('(', toArr(this.data), '?', toArr(this.dataTrue), ':', toArr(this.dataFalse), ')')
+    return concat(
+      '(',
+      toArr(this.data),
+      '?',
+      toArr(this.dataTrue),
+      ':',
+      toArr(this.dataFalse),
+      ')'
+    )
   }
 
   toString(): string {
