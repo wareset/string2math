@@ -1,2 +1,2 @@
-export { create } from './__core__/program';
-export { ProgramNode, GroupingNode, ConditionNode, ArgumentNode, FunctionNode, OperationNode } from './__core__/classes';
+export { create as default } from './__core__/program';
+export { ProgramNode, ConditionNode, VariableNode, ConstantNode, FunctionNode, OperatorNode } from './__core__/classes';

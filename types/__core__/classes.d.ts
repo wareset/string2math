@@ -1,59 +1,65 @@
-type INode = OperationNode | GroupingNode | FunctionNode | ArgumentNode | ConditionNode;
+type INode = OperatorNode | FunctionNode | VariableNode | ConstantNode | ConditionNode | undefined;
 type MathLib = {
     [key: string]: any;
 };
-type ToArray = string[];
-export declare class ProgramNode {
-    type: 'Program';
-    data: INode | undefined;
-    constructor(data: INode | undefined);
+interface Node {
+    type: string;
     toArray(): ToArray;
     toString(): string;
-    calculate(mathLibs?: MathLib[]): any;
+    calculate(...mathLibs: MathLib[]): any;
 }
-export declare class GroupingNode {
-    type: 'Grouping';
-    data: INode | undefined;
-    constructor(data: INode | undefined);
+type ToArray = (string | number)[];
+export declare class ProgramNode implements Node {
+    readonly type: 'Program';
+    nodeChild: INode;
+    constructor(nodeChild: INode);
     toArray(): ToArray;
     toString(): string;
-    calculate(mathLibs?: MathLib[]): any;
+    calculate(...mathLibs: MathLib[]): any;
 }
-export declare class ConditionNode {
-    type: 'Condition';
-    data: INode | undefined;
-    dataTrue: INode | undefined;
-    dataFalse: INode | undefined;
-    constructor(falseExp: INode | undefined, trueExp: INode | undefined, condition: INode | undefined);
+export declare class ConditionNode implements Node {
+    readonly type: 'Condition';
+    nodeIf: INode;
+    nodeThen: INode;
+    nodeElse: INode;
+    constructor(nodeIf: INode, nodeThen: INode, nodeElse: INode);
     toArray(): ToArray;
     toString(): string;
-    calculate(mathLibs?: MathLib[]): any;
+    calculate(...mathLibs: MathLib[]): any;
 }
-export declare class ArgumentNode {
-    type: 'Argument';
-    data: string;
-    constructor(a: string);
+export declare class VariableNode implements Node {
+    readonly type: 'Variable';
+    variable: string;
+    constructor(variable: string);
     toArray(): ToArray;
     toString(): string;
-    calculate(mathLibs?: MathLib[]): any;
+    calculate(...mathLibs: MathLib[]): any;
 }
-export declare class FunctionNode {
-    type: 'Function';
-    data: string;
-    dataArgs: INode[];
-    constructor(a: string, args: INode[]);
+export declare class ConstantNode implements Node {
+    readonly type: 'Constant';
+    constant: number;
+    constructor(constant: number);
     toArray(): ToArray;
     toString(): string;
-    calculate(mathLibs?: MathLib[]): any;
+    calculate(..._mathLibs: MathLib[]): any;
 }
-export declare class OperationNode {
-    type: 'Operation';
-    data: string;
-    dataLeft: INode | undefined;
-    dataRight: INode | undefined;
-    constructor(operator: string, right: INode | undefined, left: INode | undefined);
+export declare class FunctionNode implements Node {
+    readonly type: 'Function';
+    function: string;
+    nodeListOfArgs: INode[];
+    constructor(fname: string, nodes: INode[]);
     toArray(): ToArray;
     toString(): string;
-    calculate(mathLibs?: MathLib[]): any;
+    calculate(...mathLibs: MathLib[]): any;
+}
+export declare class OperatorNode implements Node {
+    readonly type: 'Operator';
+    operator: string;
+    nodeLeft: INode;
+    nodeRight: INode;
+    constructor(operator: string, nodeLeft: INode, nodeRight: INode);
+    toArray(): ToArray;
+    toString(): string;
+    calculate(...mathLibs: MathLib[]): any;
 }
 export {};

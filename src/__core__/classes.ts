@@ -1,19 +1,40 @@
-import { concat, arrayConcat, isFunction, objectHasOwn } from './utils'
-
-type INode = OperationNode | GroupingNode | FunctionNode | ArgumentNode | ConditionNode
+type INode =
+  | OperatorNode
+  | FunctionNode
+  | VariableNode
+  | ConstantNode
+  | ConditionNode
+  | undefined
 
 type MathLib = { [key: string]: any }
 // type MathLibs = MathLib[] | IArguments
 
-type ToArray = string[] // | (string | ToArray)[]
-
-function toArr(node: INode | undefined) {
-  return node ? node.toArray() : ['NaN']
+interface Node {
+  type: string
+  toArray(): ToArray
+  toString(): string
+  calculate(...mathLibs: MathLib[]): any
 }
 
-function calc(node: INode | undefined, mathLibs?: MathLib[]) {
-  return node ? node.calculate(mathLibs) : NaN
+type ToArray = (string | number)[] // | (string | ToArray)[]
+
+function toArr(node: INode): any {
+  return node ? node.toArray() : [NaN]
 }
+
+function calc(node: INode, mathLibs: MathLib[]) {
+  return node ? node.calculate.apply(node, mathLibs) : NaN
+}
+
+function isFunction(v: any): v is Function {
+  return typeof v === 'function'
+}
+
+const objectHasOwn: typeof Object.hasOwn =
+  Object.hasOwn ||
+  function (o, k) {
+    return Object.prototype.hasOwnProperty.call(o, k)
+  }
 
 // Program
 // Argument
@@ -25,158 +46,157 @@ function calc(node: INode | undefined, mathLibs?: MathLib[]) {
 //
 // ProgramNode
 //
-export class ProgramNode {
-  type: 'Program'
-  data: INode | undefined
-  constructor(data: INode | undefined) {
+export class ProgramNode implements Node {
+  readonly type: 'Program'
+  nodeChild: INode
+  constructor(nodeChild: INode) {
     this.type = 'Program'
-    this.data = data
+    this.nodeChild = nodeChild
   }
 
   toArray(): ToArray {
-    return toArr(this.data)
+    return toArr(this.nodeChild)
   }
 
   toString(): string {
-    return '' + (this.data || NaN)
+    return '' + (this.nodeChild || NaN)
   }
 
-  calculate(mathLibs?: MathLib[]): any {
-    return calc(this.data, mathLibs)
-  }
-}
-
-//
-// GroupingNode
-//
-export class GroupingNode {
-  type: 'Grouping'
-  data: INode | undefined
-  constructor(data: INode | undefined) {
-    this.type = 'Grouping'
-    this.data = data
-  }
-
-  toArray(): ToArray {
-    return toArr(this.data)
-  }
-
-  toString(): string {
-    return '' + (this.data || NaN)
-  }
-
-  calculate(mathLibs?: MathLib[]): any {
-    return calc(this.data, mathLibs)
+  calculate(...mathLibs: MathLib[]): any {
+    return calc(this.nodeChild, mathLibs)
   }
 }
 
 //
 // ConditionNode
 //
-export class ConditionNode {
-  type: 'Condition'
-  data: INode | undefined
-  dataTrue: INode | undefined
-  dataFalse: INode | undefined
-  constructor(
-    falseExp: INode | undefined,
-    trueExp: INode | undefined,
-    condition: INode | undefined
-  ) {
+export class ConditionNode implements Node {
+  readonly type: 'Condition'
+  nodeIf: INode
+  nodeThen: INode
+  nodeElse: INode
+  constructor(nodeIf: INode, nodeThen: INode, nodeElse: INode) {
     this.type = 'Condition'
-    this.data = condition
-    this.dataTrue = trueExp
-    this.dataFalse = falseExp
+    this.nodeIf = nodeIf
+    this.nodeThen = nodeThen
+    this.nodeElse = nodeElse
   }
 
   toArray(): ToArray {
-    return concat(
-      '(',
-      toArr(this.data),
+    return ['('].concat(
+      toArr(this.nodeIf),
       '?',
-      toArr(this.dataTrue),
+      toArr(this.nodeThen),
       ':',
-      toArr(this.dataFalse),
+      toArr(this.nodeElse),
       ')'
     )
   }
 
   toString(): string {
-    return `(${this.data || NaN} ? ${this.dataTrue || NaN} : ${this.dataFalse || NaN})`
+    return `(${this.nodeIf || NaN} ? ${this.nodeThen || NaN} : ${this.nodeElse || NaN})`
   }
 
-  calculate(mathLibs?: MathLib[]): any {
-    return calc(this.data, mathLibs)
-      ? calc(this.dataTrue, mathLibs)
-      : calc(this.dataFalse, mathLibs)
+  calculate(...mathLibs: MathLib[]): any {
+    return calc(this.nodeIf, mathLibs)
+      ? calc(this.nodeThen, mathLibs)
+      : calc(this.nodeElse, mathLibs)
   }
 }
 
 //
-// ArgumentNode
+// VariableNode
 //
-export class ArgumentNode {
-  type: 'Argument'
-  data: string
-  constructor(a: string) {
-    this.type = 'Argument'
-    this.data = a
+export class VariableNode implements Node {
+  readonly type: 'Variable'
+  variable: string
+  constructor(variable: string) {
+    this.type = 'Variable'
+    this.variable = variable
   }
 
   toArray(): ToArray {
-    return [this.data]
+    return [this.variable]
   }
 
   toString(): string {
-    return '' + this.data
+    return '' + this.variable
   }
 
-  calculate(mathLibs?: MathLib[]): any {
-    const is = this.data
-    const v = +is
-    if (v !== v && is !== 'NaN' && mathLibs)
-      for (let i = mathLibs.length, v; i-- > 0; ) {
+  calculate(...mathLibs: MathLib[]): any {
+    if (mathLibs)
+      for (let i = mathLibs.length, is = this.variable, v; i-- > 0; ) {
         if (objectHasOwn((v = mathLibs[i]), is)) return v[is]
       }
-    return v
+    return NaN
+  }
+}
+
+//
+// ConstantNode
+//
+export class ConstantNode implements Node {
+  readonly type: 'Constant'
+  constant: number
+  constructor(constant: number) {
+    this.type = 'Constant'
+    this.constant = constant
+  }
+
+  toArray(): ToArray {
+    return [this.constant]
+  }
+
+  toString(): string {
+    return '' + this.constant
+  }
+
+  calculate(..._mathLibs: MathLib[]): any {
+    return this.constant
   }
 }
 
 //
 // FunctionNode
 //
-function map_toArr(v: INode, k: number): ToArray {
-  return k === 0 ? v.toArray() : concat(',', v.toArray())
-}
-function map_calculate(this: MathLib[], v: INode): number {
-  return v.calculate(this)
-}
-export class FunctionNode {
-  type: 'Function'
-  data: string
-  dataArgs: INode[]
-  constructor(a: string, args: INode[]) {
+export class FunctionNode implements Node {
+  readonly type: 'Function'
+  function: string
+  nodeListOfArgs: INode[]
+  constructor(fname: string, nodes: INode[]) {
     this.type = 'Function'
-    this.data = a as any
-    this.dataArgs = args
+    this.function = fname
+    this.nodeListOfArgs = nodes
   }
 
   toArray(): ToArray {
-    return concat(this.data + '(', arrayConcat.apply([], this.dataArgs.map(map_toArr)), ')')
+    return [this.function + '('].concat(
+      Array.prototype.concat.apply(
+        [],
+        this.nodeListOfArgs.map(function (v: INode, k: number) {
+          return k === 0 ? toArr(v) : [','].concat(toArr(v))
+        })
+      ),
+      ')'
+    )
   }
 
   toString(): string {
-    return `${this.data}(${this.dataArgs.join(', ')})`
+    return `${this.function}(${this.nodeListOfArgs.join(', ')})`
   }
 
-  calculate(mathLibs?: MathLib[]): any {
-    const is = this.data
+  calculate(...mathLibs: MathLib[]): any {
+    const is = this.function
     if (mathLibs)
-      for (let i = mathLibs.length, v; i-- > 0; ) {
+      for (let i = mathLibs.length, v; i-- > 0; )
         if (objectHasOwn((v = mathLibs[i]), is) && isFunction((v = v[is]))) {
-          return v.apply(void 0, this.dataArgs.map(map_calculate, mathLibs))
+          return v.apply(
+            void 0,
+            this.nodeListOfArgs.map(function (this: MathLib[], v: INode): number {
+              return v ? v.calculate.apply(v, this) : NaN
+            }, mathLibs)
+          )
         }
-      }
     return NaN
   }
 }
@@ -185,146 +205,147 @@ export class FunctionNode {
 // OperationNode
 //
 // import { mul, div, rem, add, sub, pow } from './algebra'
-export class OperationNode {
-  type: 'Operation'
-  data: string
-  dataLeft: INode | undefined
-  dataRight: INode | undefined
-  constructor(operator: string, right: INode | undefined, left: INode | undefined) {
-    this.type = 'Operation'
-    this.data = operator
-    this.dataLeft = left
-    this.dataRight = right
+export class OperatorNode implements Node {
+  readonly type: 'Operator'
+  operator: string
+  nodeLeft: INode
+  nodeRight: INode
+  constructor(operator: string, nodeLeft: INode, nodeRight: INode) {
+    this.type = 'Operator'
+    this.operator = operator
+    this.nodeLeft = nodeLeft
+    this.nodeRight = nodeRight
   }
 
   toArray(): ToArray {
-    const is = this.data
-    const isLeft = this.dataLeft
-    const isRight = this.dataRight
+    const is = this.operator
+    const nL = this.nodeLeft
+    const nR = this.nodeRight
 
-    const vLeft = toArr(isLeft)
-    const vRight = toArr(isRight)
+    // const vL = toArr(isL)
+    // const vR = toArr(isR)
 
     // prettier-ignore
-    return !isRight ? vLeft : !isLeft
-      ? is === '!' || is === '~' || is === '-' ? concat(is, vRight) : vRight
-      : is === '!' || is === '~' ? ['NaN'] : concat('(', vLeft, is, vRight, ')')
+    return !nR ? toArr(nL) : !nL
+      ? is === '!' || is === '~' || is === '-' || is === '+'
+        ? [is].concat(toArr(nR)) : toArr(nR)
+      : is === '!' || is === '~'
+        ? [NaN] : ['('].concat(toArr(nL), is, toArr(nR), ')')
   }
 
   toString(): string {
-    const is = this.data
-    const isLeft = this.dataLeft
-    const isRight = this.dataRight
+    const is = this.operator
+    const nL = this.nodeLeft
+    const nR = this.nodeRight
 
-    const vLeft = '' + (isLeft || NaN)
-    const vRight = '' + (isRight || NaN)
+    const vL = '' + (nL || NaN)
+    const vR = '' + (nR || NaN)
 
     // prettier-ignore
-    return !isRight ? vLeft : !isLeft
-      ? is === '!' || is === '~' || is === '-' ? is + vRight : vRight
-      : is === '!' || is === '~' ? 'NaN' : `(${vLeft} ${is} ${vRight})`
+    return !nR ? vL : !nL
+      ? is === '!' || is === '~' || is === '-' || is === '+' ? is + vR : vR
+      : is === '!' || is === '~' ? 'NaN' : `(${vL} ${is} ${vR})`
   }
 
-  calculate(mathLibs?: MathLib[]): any {
-    const is = this.data
-    const isLeft = this.dataLeft
-    const isRight = this.dataRight
+  calculate(...mathLibs: MathLib[]): any {
+    const is = this.operator
+    const nL = this.nodeLeft
+    const nR = this.nodeRight
 
-    let vLeft = calc(isLeft, mathLibs)
-    let vRight = calc(isRight, mathLibs)
-
-    if (!isRight) return vLeft
+    let vL = calc(nL, mathLibs)
+    if (!nR) return vL
+    let vR = calc(nR, mathLibs)
 
     let fn!: Function
     if (mathLibs)
-      for (let i = mathLibs.length, v; i-- > 0; ) {
+      for (let i = mathLibs.length, v; i-- > 0; )
         if (objectHasOwn((v = mathLibs[i]), is) && isFunction((v = v[is]))) {
           fn = v
           break
         }
-      }
 
-    if (!isLeft) {
+    if (!nL) {
       switch (is) {
         // 14
         case '!':
-          return fn ? fn(vRight) : +!+vRight
+          return fn ? fn(vR) : +!+vR
         case '~':
-          return fn ? fn(vRight) : ~+vRight
+          return fn ? fn(vR) : ~+vR
+        // 11
         case '+':
-          return fn ? fn(0, vRight) : +vRight
+          return fn ? fn(0, vR) : +vR
         case '-':
-          return fn ? fn(0, vRight) : -+vRight
+          return fn ? fn(0, vR) : -+vR
       }
-      return vRight
+      return vR
     }
 
-    if (fn) return fn(vLeft, vRight)
+    if (fn) return fn(vL, vR)
 
-    vLeft = +vLeft
-    vRight = +vRight
+    vL = +vL
+    vR = +vR
     switch (is) {
       // 14
       // case '!': return NaN
       // case '~': return NaN
       // 13
       case '**':
-        return Math.pow(vLeft, vRight) // pow(vLeft, vRight)
+        return Math.pow(vL, vR) // pow(vL, vR)
       // 12
       case '*':
-        return vLeft * vRight // mul(vLeft, vRight)
+        return vL * vR // mul(vL, vR)
       case '/':
-        return vLeft / vRight // div(vLeft, vRight)
+        return vL / vR // div(vL, vR)
       case '%':
-        return vLeft % vRight // rem(vLeft, vRight)
+        return vL % vR // rem(vL, vR)
       // 11
       case '+':
-        return vLeft + vRight // add(vLeft, vRight)
+        return vL + vR // add(vL, vR)
       case '-':
-        return vLeft - vRight // sub(vLeft, vRight)
+        return vL - vR // sub(vL, vR)
       // 10
       case '<<':
-        return vLeft << vRight
+        return vL << vR
       case '>>':
-        return vLeft >> vRight
+        return vL >> vR
       case '>>>':
-        return vLeft >>> vRight
+        return vL >>> vR
       // 9
       case '<':
-        return vLeft < vRight ? 1 : 0
+        return vL < vR ? 1 : 0
       case '<=':
-        return vLeft <= vRight ? 1 : 0
+        return vL <= vR ? 1 : 0
       case '>':
-        return vLeft > vRight ? 1 : 0
+        return vL > vR ? 1 : 0
       case '>=':
-        return vLeft >= vRight ? 1 : 0
+        return vL >= vR ? 1 : 0
       // 8
       case '=':
       case '==':
-        return vLeft == vRight ? 1 : 0
+        return vL == vR ? 1 : 0
       case '===':
-        return vLeft === vRight ? 1 : 0
+        return vL === vR ? 1 : 0
       case '!=':
-        return vLeft != vRight ? 1 : 0
+        return vL != vR ? 1 : 0
       case '!==':
-        return vLeft !== vRight ? 1 : 0
+        return vL !== vR ? 1 : 0
       // 7
       case '&':
-        return vLeft & vRight
+        return vL & vR
       // 6
       case '^':
-        return vLeft ^ vRight
+        return vL ^ vR
       // 5
       case '|':
-        return vLeft | vRight
+        return vL | vR
       // 4
       case '&&':
-        return vLeft ? vRight : vLeft
+        return vL ? vR : vL
       // 3
       case '||':
-        return vLeft ? vLeft : vRight
+        return vL ? vL : vR
       case '??':
-        return vLeft === vLeft ? vLeft : vRight
+        return vL === vL ? vL : vR
     }
     return NaN
   }

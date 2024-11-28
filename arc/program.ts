@@ -1,5 +1,7 @@
+import { concat, last } from './utils'
 import {
   ProgramNode,
+  // GroupingNode,
   ConditionNode,
   VariableNode,
   ConstantNode,
@@ -9,10 +11,8 @@ import {
 
 // |\[[^\]]*\]
 const REG_FOR_OPERATORS =
-  /\?\??|\|\|?|\*\*?|&&?|<<|>>>?|[!=]=?=?|[<>]=?|(?<!\d\.?[eE])[-+]|[-+](?!\d)|[,:~^%/()[\]]/g
-///\?\??|\|\|?|\*\*?|&&?|<<|>>>?|[!=]=?=?|[<>]=?|(?<!\d\.?[eE])[-+]|[,:~^%/()[\]]/g
-
-const REG_FOR_NUMBERS = /^(\d*\.?\d*[eE]?[-+]?\d+)\s*([^]*)$/
+  /\?\??|\|\|?|\*\*?|&&?|<<|>>>?|[!=]=?=?|[<>]=?|[-+]|(\d+)|[,:~^%/()[\]]/g
+  // /\?\??|\|\|?|\*\*?|&&?|<<|>>>?|[!=]=?=?|[<>]=?|(?<!\d\.?[eE])[-+]|[,:~^%/()[\]]/g
 
 // const REG_FOR_FNS = /^[a-z][$\w]*$/
 
@@ -67,10 +67,6 @@ type Grouping_and_Ternaries = {
   [key: string]: { f: number; s: number }[]
 }
 
-function last<T>(a: T[]): T | undefined {
-  return a[a.length - 1]
-}
-
 // prettier-ignore
 function parse(
   A: string[], deep: number, offset: number,
@@ -83,7 +79,7 @@ function parse(
     for (a = commas[deep], i = a.length; i-- > 0;) {
       if ((f = a[i] - offset) > -1 && f < A.length) {
         a.splice(i, 1)
-        return [].concat(
+        return concat(
   parse(A.slice(0, f), deep, offset, grouping, ternaries, commas, operators),
   parse(A.slice(f + 1), deep, offset + f + 1, grouping, ternaries, commas, operators),
         )
@@ -95,16 +91,16 @@ function parse(
     for (a = ternaries[deep], i = a.length; i-- > 0;) {
       if ((f = a[i].f - offset) > -1 && f < A.length && (s = a[i].s - offset) > f) {
         a.splice(i, 1)
-        const nodeElse = last([].concat(
+        const nodeFalse = last(concat(
   parse(A.slice(s + 1), deep, offset + s + 1, grouping, ternaries, commas, operators)
         ))
-        const nodeThen = last([].concat(
+        const nodeTrue = last(concat(
   parse(A.slice(f + 1, s), deep, offset + f + 1, grouping, ternaries, commas, operators)
         ))
-        const nodeIf = last([].concat(
+        const nodeIf = last(concat(
   parse(A.slice(0, f), deep, offset, grouping, ternaries, commas, operators)
         ))
-        return new ConditionNode(nodeIf, nodeThen, nodeElse)
+        return new ConditionNode(nodeIf, nodeTrue, nodeFalse)
       }
     }
   }
@@ -113,10 +109,10 @@ function parse(
     for (a = operators[deep], i = a.length; i-- > 0;) {
       if ((f = a[i] - offset) > -1 && f < A.length) {
         a.splice(i, 1)
-        const nodeRight = last([].concat(
+        const nodeRight = last(concat(
   parse(A.slice(f + 1), deep, offset + f + 1, grouping, ternaries, commas, operators)
         ))
-        const nodeLeft = last([].concat(
+        const nodeLeft = last(concat(
   parse(A.slice(0, f), deep, offset, grouping, ternaries, commas, operators)
         ))
         return new OperatorNode(A[f], nodeLeft, nodeRight)
@@ -130,13 +126,13 @@ function parse(
         a.splice(i, 1)
         return A[f] === '('
           ? // new GroupingNode(
-            last([].concat(
+            last(concat(
   parse(A.slice(f + 1, s), deep + 1, offset + f + 1, grouping, ternaries, commas, operators)
             ))
           // )
           : new FunctionNode(
             A[f],
-            [].concat(
+            concat(
   parse(A.slice(f + 2, s), deep + 1, offset + f + 2, grouping, ternaries, commas, operators)
             )
           )
@@ -170,8 +166,6 @@ function setMultiply(
 // prettier-ignore
 export function create(source: string) {
   source = '(' + source + ')'
-  REG_FOR_OPERATORS.lastIndex = 0
-
   const A: string[] = []
   let idx = 0
   let v: string, vLast: string = '', vAny: string
@@ -189,10 +183,9 @@ export function create(source: string) {
   const operators: Operators = {}
   const operatorsTmp: OperatorsTmp = {}
 
-  let m: RegExpExecArray | null
-  let m2: RegExpMatchArray | null
-  for (; m = REG_FOR_OPERATORS.exec(source);) {
-    // console.log(m)
+  REG_FOR_OPERATORS.lastIndex = 0
+  for (let m: RegExpExecArray; m = REG_FOR_OPERATORS.exec(source)!;) {
+    console.log(m)
 
     switch (v = m[0]) {
       case '[': {
@@ -208,11 +201,6 @@ export function create(source: string) {
 
         if (m.index > idx && (vAny = source.slice(idx, m.index).trim())) {
           if (vLast === ')') setMultiply(operatorsTmp, deep, A)
-          if (m2 = vAny.match(REG_FOR_NUMBERS)) {
-            // console.log('m2', m2)
-            '.' === (vAny = m2[1]!)[0] && (vAny = '0' + vAny)
-            m2[2] && (A.push(vAny), setMultiply(operatorsTmp, deep, A), vAny = m2[2])
-          }
           A.push(vLast = vAny)
         }
 
@@ -279,7 +267,7 @@ export function create(source: string) {
             }
           }
         }
-
+    
         idx = m.index + v.length
         A.push(vLast = v)
       }
@@ -295,7 +283,7 @@ export function create(source: string) {
   }
 
   return new ProgramNode(
-    last([].concat(
+    last(concat(
   parse(A.slice(1, -1), 1, 1, grouping, ternaries, commas, operators)
     ))
   )

@@ -1,4 +1,4 @@
-export { create } from './__core__/program'
+export { create as default } from './__core__/program'
 
 // export type { NumRaw } from './__core__/algebra'
 // export { num2raw, raw2num } from './__core__/algebra'
@@ -6,11 +6,11 @@ export { create } from './__core__/program'
 
 export {
   ProgramNode,
-  GroupingNode,
   ConditionNode,
-  ArgumentNode,
+  VariableNode,
+  ConstantNode,
   FunctionNode,
-  OperationNode
+  OperatorNode
 } from './__core__/classes'
 
 // export const OPERATORS = {
