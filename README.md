@@ -29,8 +29,8 @@ console.log(program_2.calculate({ var_1: 1, var_2: 2 })) // 7
 
 // complex variable names should be written in square brackets
 
-program_2 = stringmath('[EUR/USD] / [GBP/USD]')
-console.log(program_2.calculate({ '[EUR/USD]': 1.04, '[GBP/USD]': 1.26 }))
+program_2 = stringmath('[EUR / USD] / [GBP / USD]')
+console.log(program_2.calculate({ '[EUR / USD]': 1.04, '[GBP / USD]': 1.26 }))
 ```
 
 #### Functions
