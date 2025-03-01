@@ -18,7 +18,7 @@ import string2math from 'string2math'
 
 ```js
 let program_1 = string2math('(1.2 + 42) * -4.4e-2')
-console.log(program_1.calculate())
+console.log(program_1.calculate()) // -1.9008
 ```
 
 #### Variables
