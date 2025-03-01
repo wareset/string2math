@@ -9,7 +9,7 @@ const REG_ZERO = /^0+/
 
 export type NumRaw = {
   isNaN: boolean
-  isMinus: boolean
+  isNegative: boolean
   isInfinity: boolean
   integer: string
   exponent: number
@@ -20,7 +20,7 @@ export function num2raw(s: number): NumRaw {
 
   return {
     isNaN     : !!res[1],
-    isMinus   : res[2] === '-',
+    isNegative: res[2] === '-',
     isInfinity: !!res[3],
     integer   : (res[4] + res[5]).replace(REG_ZERO, ''),
     exponent  : +res[6] - res[5].length,
@@ -29,8 +29,8 @@ export function num2raw(s: number): NumRaw {
 
 export function raw2num(raw: NumRaw): number {
   return raw.isNaN ? NaN
-    : raw.isInfinity ? raw.isMinus ? -Infinity : Infinity
-      : +((raw.isMinus ? '-' : '') + (raw.integer || '0') + 'e' + raw.exponent)
+    : raw.isInfinity ? raw.isNegative ? -Infinity : Infinity
+      : +((raw.isNegative ? '-' : '') + (raw.integer || '0') + 'e' + raw.exponent)
 }
 
 //

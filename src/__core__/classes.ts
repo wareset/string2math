@@ -124,10 +124,9 @@ export class VariableNode implements Node {
   }
 
   calculate(...mathLibs: MathLib[]): any {
-    if (mathLibs)
-      for (let i = mathLibs.length, is = this.variable, v; i-- > 0; ) {
-        if (objectHasOwn((v = mathLibs[i]), is)) return v[is]
-      }
+    for (let i = mathLibs.length, is = this.variable, v; i-- > 0; ) {
+      if (objectHasOwn((v = mathLibs[i]), is)) return v[is]
+    }
     return NaN
   }
 }
@@ -151,7 +150,7 @@ export class ConstantNode implements Node {
     return '' + this.constant
   }
 
-  calculate(..._mathLibs: MathLib[]): any {
+  calculate(): any {
     return this.constant
   }
 }
@@ -187,16 +186,14 @@ export class FunctionNode implements Node {
 
   calculate(...mathLibs: MathLib[]): any {
     const is = this.function
-    if (mathLibs)
-      for (let i = mathLibs.length, v; i-- > 0; )
-        if (objectHasOwn((v = mathLibs[i]), is) && isFunction((v = v[is]))) {
-          return v.apply(
-            void 0,
-            this.nodeListOfArgs.map(function (this: MathLib[], v: INode): number {
-              return v ? v.calculate.apply(v, this) : NaN
-            }, mathLibs)
-          )
-        }
+    for (let i = mathLibs.length, v; i-- > 0; )
+      if (objectHasOwn((v = mathLibs[i]), is) && isFunction((v = v[is])))
+        return v.apply(
+          void 0,
+          this.nodeListOfArgs.map(function (this: MathLib[], v: INode): number {
+            return v ? v.calculate.apply(v, this) : NaN
+          }, mathLibs)
+        )
     return NaN
   }
 }
@@ -257,12 +254,11 @@ export class OperatorNode implements Node {
     let vR = calc(nR, mathLibs)
 
     let fn!: Function
-    if (mathLibs)
-      for (let i = mathLibs.length, v; i-- > 0; )
-        if (objectHasOwn((v = mathLibs[i]), is) && isFunction((v = v[is]))) {
-          fn = v
-          break
-        }
+    for (let i = mathLibs.length, v; i-- > 0; )
+      if (objectHasOwn((v = mathLibs[i]), is) && isFunction((v = v[is]))) {
+        fn = v
+        break
+      }
 
     if (!nL) {
       switch (is) {
@@ -320,9 +316,9 @@ export class OperatorNode implements Node {
       case '>=':
         return vL >= vR ? 1 : 0
       // 8
-      case '=':
       case '==':
         return vL == vR ? 1 : 0
+      case '=':
       case '===':
         return vL === vR ? 1 : 0
       case '!=':

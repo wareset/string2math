@@ -1,7 +1,7 @@
 {
   "name": "stringmath",
   "version": "1.0.0",
-  "description": "Makes a number a multiple of a divisor, including rounding",
+  "description": "A library for calculating mathematical expressions from a string",
   "keywords": [
     "stringmath"
   ],

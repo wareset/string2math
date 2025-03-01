@@ -12,7 +12,7 @@ const REG_FOR_OPERATORS =
   /\?\??|\|\|?|\*\*?|&&?|<<|>>>?|[!=]=?=?|[<>]=?|(?<!\d\.?[eE])[-+]|[-+](?!\d)|[,:~^%/()[\]]/g
 ///\?\??|\|\|?|\*\*?|&&?|<<|>>>?|[!=]=?=?|[<>]=?|(?<!\d\.?[eE])[-+]|[,:~^%/()[\]]/g
 
-const REG_FOR_NUMBERS = /^(\d*\.?\d*[eE]?[-+]?\d+)\s*([^]*)$/
+// const REG_FOR_NUMBERS = /^(\d*\.?\d*[eE]?[-+]?\d+)\s*([^]*)$/
 
 // const REG_FOR_FNS = /^[a-z][$\w]*$/
 
@@ -168,7 +168,7 @@ function setMultiply(
 }
 
 // prettier-ignore
-export function create(source: string) {
+export function program(source: string) {
   source = '(' + source + ')'
   REG_FOR_OPERATORS.lastIndex = 0
 
@@ -190,7 +190,7 @@ export function create(source: string) {
   const operatorsTmp: OperatorsTmp = {}
 
   let m: RegExpExecArray | null
-  let m2: RegExpMatchArray | null
+  // let m2: RegExpMatchArray | null
   for (; m = REG_FOR_OPERATORS.exec(source);) {
     // console.log(m)
 
@@ -208,11 +208,14 @@ export function create(source: string) {
 
         if (m.index > idx && (vAny = source.slice(idx, m.index).trim())) {
           if (vLast === ')') setMultiply(operatorsTmp, deep, A)
-          if (m2 = vAny.match(REG_FOR_NUMBERS)) {
-            // console.log('m2', m2)
-            '.' === (vAny = m2[1]!)[0] && (vAny = '0' + vAny)
-            m2[2] && (A.push(vAny), setMultiply(operatorsTmp, deep, A), vAny = m2[2])
-          }
+
+          // // this code need for like 2.5xy => 2.5 * xy
+          // if (m2 = vAny.match(REG_FOR_NUMBERS)) {
+          //   // console.log('m2', m2)
+          //   '.' === (vAny = m2[1]!)[0] && (vAny = '0' + vAny)
+          //   m2[2] && (A.push(vAny), setMultiply(operatorsTmp, deep, A), vAny = m2[2])
+          // }
+
           A.push(vLast = vAny)
         }
 

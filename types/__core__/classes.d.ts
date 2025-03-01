@@ -41,7 +41,7 @@ export declare class ConstantNode implements Node {
     constructor(constant: number);
     toArray(): ToArray;
     toString(): string;
-    calculate(..._mathLibs: MathLib[]): any;
+    calculate(): any;
 }
 export declare class FunctionNode implements Node {
     readonly type: 'Function';

@@ -1,4 +1,4 @@
-export { create as default } from './__core__/program'
+export { program as default } from './__core__/program'
 
 // export type { NumRaw } from './__core__/algebra'
 // export { num2raw, raw2num } from './__core__/algebra'
