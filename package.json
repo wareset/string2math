@@ -1,18 +1,18 @@
 {
-  "name": "stringmath",
+  "name": "string2math",
   "version": "1.0.0",
   "description": "A library for calculating mathematical expressions from a string",
   "keywords": [
-    "stringmath"
+    "string2math"
   ],
   "license": "MIT",
-  "homepage": "https://github.com/wareset/stringmath#readme",
+  "homepage": "https://github.com/wareset/string2math#readme",
   "bugs": {
-    "url": "https://github.com/wareset/stringmath/issues"
+    "url": "https://github.com/wareset/string2math/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/wareset/stringmath.git"
+    "url": "git+https://github.com/wareset/string2math.git"
   },
   "author": "rease <cftcview@gmail.com>",
   "main": "index",

@@ -1,61 +1,61 @@
-# stringmath
+# string2math
 
 A library for calculating mathematical expressions from a string
 
 ## How it works
 
 ```sh
-npm install stringmath
+npm install string2math
 ```
 
 ### Calculate
 
 ```js
-import stringmath from 'stringmath'
+import string2math from 'string2math'
 ```
 
 #### Numbers
 
 ```js
-let program_1 = stringmath('(1.2 + 42) * -4.4e-2')
+let program_1 = string2math('(1.2 + 42) * -4.4e-2')
 console.log(program_1.calculate())
 ```
 
 #### Variables
 
 ```js
-let program_2 = stringmath('var_1 + var_2 * 3')
+let program_2 = string2math('var_1 + var_2 * 3')
 console.log(program_2.calculate({ var_1: 1, var_2: 2 })) // 7
 
 // complex variable names should be written in square brackets
 
-program_2 = stringmath('[EUR / USD] / [GBP / USD]')
+program_2 = string2math('[EUR / USD] / [GBP / USD]')
 console.log(program_2.calculate({ '[EUR / USD]': 1.04, '[GBP / USD]': 1.26 }))
 ```
 
 #### Functions
 
 ```js
-let program_3 = stringmath('func(1, 2) + x')
+let program_3 = string2math('func(1, 2) + x')
 console.log(program_3.calculate({ func: Math.max, x: 5 })) // 7
 
 // or
 
-program_3 = stringmath('max(1, 2) + x')
+program_3 = string2math('max(1, 2) + x')
 console.log(program_3.calculate(Math, { x: 5 })) // 7
 ```
 
 #### Conditions
 
 ```js
-let program_1 = stringmath('x !== -Infinity ? x : NaN')
+let program_1 = string2math('x !== -Infinity ? x : NaN')
 console.log(program_1.calculate({ x: 42 })) // 42
 ```
 
 #### Custom operators
 
 ```js
-let program_4 = stringmath('vec2(1, 2) + vec2(3, 4) - -vec2(1, 1)')
+let program_4 = string2math('vec2(1, 2) + vec2(3, 4) - -vec2(1, 1)')
 console.log(
   program_4.calculate({
     vec2: (x, y) => ({ x: x, y: y }),
@@ -122,11 +122,11 @@ import {
   ConstantNode,
   FunctionNode,
   OperatorNode,
-} from 'stringmath'
+} from 'string2math'
 
-import stringmath from 'stringmath'
+import string2math from 'string2math'
 
-const program = stringmath('(x + 1) * 2 - 3 >= func(4, 5) ? 6 : 7')
+const program = string2math('(x + 1) * 2 - 3 >= func(4, 5) ? 6 : 7')
 
 console.log(program)
 //  ||
