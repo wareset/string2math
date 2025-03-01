@@ -195,6 +195,25 @@ _ = /* ProgramNode */ {
 }
 ```
 
+## Additionally
+```js
+
+import string2math from 'string2math'
+
+const program = string2math('1 + 2 % x * 3 ** y - 4 / 5')
+
+console.log(program.toString())
+// ((1 + ((2 % x) * (3 ** y))) - (4 / 5))
+
+console.log(program.toArray())
+/*
+[
+  '(', '(', 1, '+', '(', '(', 2, '%', 'x', ')', '*', '(', 
+  3, '**', 'y', ')', ')', ')', '-', '(', 4, '/', 5, ')', ')'
+]
+*/
+```
+
 ## License
 
 [MIT](LICENSE)
