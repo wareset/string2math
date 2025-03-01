@@ -14,11 +14,11 @@ npm install stringmath
 import stringmath from 'stringmath'
 ```
 
-#### Base
+#### Numbers
 
 ```js
-let program_1 = stringmath('(1 + 2) * 3 === 9 ? 1 : 0')
-console.log(program_1.calculate()) // 1
+let program_1 = stringmath('(1.2 + 42) * -4.4e-2')
+console.log(program_1.calculate())
 ```
 
 #### Variables
@@ -45,16 +45,37 @@ program_3 = stringmath('max(1, 2) + x')
 console.log(program_3.calculate(Math, { x: 5 })) // 7
 ```
 
+#### Conditions
+
+```js
+let program_1 = stringmath('x !== -Infinity ? x : NaN')
+console.log(program_1.calculate({ x: 42 })) // 42
+```
+
 #### Custom operators
 
 ```js
-let program_4 = stringmath('vec2(1, 2) + vec2(3, 4)')
+let program_4 = stringmath('vec2(1, 2) + vec2(3, 4) - -vec2(1, 1)')
 console.log(
   program_4.calculate({
     vec2: (x, y) => ({ x: x, y: y }),
-    '+': (v1, v2) => ({ x: v1.x + v2.x, y: v1.y + v2.y }),
+    '+': (v1 = { x: 0, y: 0 }, v2) => ({ x: v1.x + v2.x, y: v1.y + v2.y }),
+    '-': (v1 = { x: 0, y: 0 }, v2) => ({ x: v1.x - v2.x, y: v1.y - v2.y }),
   })
-) // { x: 4, y: 6 }
+) // { x: 5, y: 7 }
+
+/*
+NOTE
+The operators "+" and "-" can be placed before a variable, like "!" and "~":
+-~2 - -3 * +!5
+
+In this case, the function will be called like this:
+
+addition(undefined, value) // +
+subtraction(undefined, value) // -
+
+!!! We need to keep this in mind !!!
+*/
 ```
 
 All operators can be replaced:

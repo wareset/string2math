@@ -269,9 +269,9 @@ export class OperatorNode implements Node {
           return fn ? fn(vR) : ~+vR
         // 11
         case '+':
-          return fn ? fn(0, vR) : +vR
+          return fn ? fn(void 0, vR) : +vR
         case '-':
-          return fn ? fn(0, vR) : -+vR
+          return fn ? fn(void 0, vR) : -vR
       }
       return vR
     }
