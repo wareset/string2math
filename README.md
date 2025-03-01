@@ -17,7 +17,7 @@ import stringmath from 'stringmath'
 #### Base
 
 ```js
-let program_1 = stringmath('1 + 2 * 3 === 7 ? 1 : 0')
+let program_1 = stringmath('(1 + 2) * 3 === 9 ? 1 : 0')
 console.log(program_1.calculate()) // 1
 ```
 
